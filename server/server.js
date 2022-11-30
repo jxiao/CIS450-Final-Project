@@ -24,6 +24,9 @@ app.get("/hello", async (req, res) => {
   res.send(`Hello! Welcome to the Entertainment Engine server!`);
 });
 
+/**
+ * BOOK ROUTES
+ */
 app.get("/books", async (req, res) => {
   const { genres, author, minRating, numResults } = req.query;
   const existsFilter = genre || author || minRating;
@@ -115,6 +118,14 @@ app.get("/authors/:id", async (req, res) => {
     }
   });
 });
+
+/**
+ * MOVIE ROUTES
+ */
+
+/**
+ * SHARED ROUTES
+ */
 
 app.listen(config.server_port, () => {
   console.log(
