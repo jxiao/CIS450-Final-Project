@@ -25,14 +25,11 @@ app.get("/hello", async (req, res) => {
 });
 
 app.get("/books", async (req, res) => {
-  const { genre, author, minRating, numResults } = req.query;
+  const { genres, author, minRating, numResults } = req.query;
   const existsFilter = genre || author || minRating;
   let query = `SELECT * FROM Books ${numResults ? `LIMIT ${numResults}` : ""}`;
   if (existsFilter) {
     const whereClauses = [];
-    if (genre) {
-      whereClauses.push(`g.GenreName IN ${genre}`);
-    }
     if (author) {
       whereClauses.push(`author LIKE '%${author}%'`);
     }
@@ -41,16 +38,18 @@ app.get("/books", async (req, res) => {
     }
     const whereString = whereClauses.join(" AND ");
     query = `
-    WITH BookGenres AS (
-      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName) AS GenreList
-      FROM GenreOfBook
-      GROUP BY BookISBN
-    )
-    SELECT * 
-    FROM Books b
-    JOIN BookGenres g ON b.ISBN = g.BookISBN
-    ${whereString}  
-    ${numResults ? `LIMIT ${numResults}` : ""}
+      WITH GenreSatisfyingBooks AS (
+        SELECT BookISBN
+        FROM GenreOfBook
+        WHERE GenreName IN ${genres}
+        GROUP BY BookISBN
+        HAVING COUNT(*) = ${genres.length}
+      )
+      SELECT * 
+      FROM Books b
+      JOIN GenreSatisfyingBooks g ON b.ISBN = g.BookISBN
+      ${whereString}  
+      ${numResults ? `LIMIT ${numResults}` : ""}
     `;
   }
   connection.query(query, (error, results) => {
@@ -58,6 +57,61 @@ app.get("/books", async (req, res) => {
       res.status(400).json({ error: error });
     } else if (results) {
       res.status(200).json({ books: results });
+    }
+  });
+});
+
+app.get("/books/:id", async (req, res) => {
+  const { id } = req.params;
+  const query = `
+    SELECT *
+    FROM Books
+    WHERE ISBN = ${id}
+  `;
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else if (results.length > 0) {
+      res.status(200).json({ books: results[0] });
+    } else {
+      res.status(404).json({ error: "Book not found" });
+    }
+  });
+});
+
+// TODO: /books/:id/similar
+
+app.get("/authors", async (req, res) => {
+  const { name, gender } = req.query;
+  // TODO: is gender a string or an int here?  Do we need to parse it?
+  const query = `
+    SELECT *
+    FROM Authors
+    WHERE Name LIKE '%${name}%' AND gender = ${gender}
+  `;
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else if (results) {
+      res.status(200).json({ authors: results });
+    }
+  });
+});
+
+app.get("/authors/:id", async (req, res) => {
+  const { id } = req.params;
+  const query = `
+    SELECT *
+    FROM Authors
+    WHERE Name = ${id}
+  `;
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else if (results.length > 0) {
+      res.status(200).json({ authors: results[0] });
+    } else {
+      res.status(404).json({ error: "Author not found" });
     }
   });
 });
