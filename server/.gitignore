@@ -1,3 +1,7 @@
+# IGNORE CONFIG JSON FILE FOR AWS SECURITY
+config.json
+configuration.json
+
 # Logs
 logs
 *.log
