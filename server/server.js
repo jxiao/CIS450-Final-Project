@@ -19,17 +19,12 @@ connection.connect();
 // whitelist localhost 3000
 app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
 
-// Route 1 - register as GET
-app.get("/hello", async (req, res) => {
-  res.send(`Hello! Welcome to the Entertainment Engine server!`);
-});
-
 /**
  * BOOK ROUTES
  */
 app.get("/books", async (req, res) => {
   const { genres, author, minRating, numResults } = req.query;
-  const existsFilter = genre || author || minRating;
+  const existsFilter = genres || author || minRating;
   let query = `SELECT * FROM Books ${numResults ? `LIMIT ${numResults}` : ""}`;
   if (existsFilter) {
     const whereClauses = [];
