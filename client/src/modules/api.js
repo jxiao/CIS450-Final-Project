@@ -19,3 +19,32 @@ export const postLogin = async (username, password) => {
   }
 };
 */
+
+export const bestDirector = async () => {
+  try {
+    console.log("yep");
+    const resp = await axios.get(`${rootURL}/directors/best`, { withCredentials: true });
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    console.log("ERROR");
+    return { status: error.response.status, data: error.response.data };
+  }
+};
+
+export const getBooks = async () => {
+  try {
+    const resp = await axios.get(`${rootURL}/books`);
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+};
+
+export const getMovies = async () => {
+  try {
+    const resp = await axios.get(`${rootURL}/movies`);
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+};
