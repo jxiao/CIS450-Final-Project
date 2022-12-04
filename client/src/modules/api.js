@@ -19,3 +19,16 @@ export const postLogin = async (username, password) => {
   }
 };
 */
+
+
+export const getSearch = async (searchInput => {
+  try {
+    const resp = await axios.post(`${rootURL}/search`, {
+      searchInput,
+    });
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+});
+
