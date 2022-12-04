@@ -1,9 +1,10 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button, Input, Space, Table } from 'antd';
+import {getSearch} from '../modules/api';
 
 import { SearchOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
-const data = [
+const dataExample = [
   {
     key: '1',
     name: 'John Brown',
@@ -38,17 +39,27 @@ const data = [
 
 function Search() {
   const [searchText, setSearchText] = useState('');
-  const [searchedColumn, setSearchedColumn] = useState('');
-  const searchInput = useRef(null);
-  const handleSearch = (selectedKeys, confirm, dataIndex) => {
-    confirm();
-    setSearchText(selectedKeys[0]);
-    setSearchedColumn(dataIndex);
+  const [data, setData] = useState(null);
+  const handleSearch = (e) => {
+    setSearchText(e.target.value);
   };
-  const handleReset = (clearFilters) => {
-    clearFilters();
-    setSearchText('');
-  };
+
+
+//   const handleReset = (clearFilters) => {
+//     setSearchText('');
+//   };
+
+  useEffect(() => {
+    const fetchResults = async () => {
+        const results = await getSearch({
+        search: searchText,
+        });
+        console.log("hi");
+    };
+    fetchResults();
+    // setData(results);
+  }, [searchText]);
+
   // const getColumnSearchProps = (dataIndex) => ({
   //   filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
   //     <div
@@ -185,8 +196,8 @@ function Search() {
 
   return (
     <div>
-      <Input placeholder="Basic usage" />
-      <Table columns={columns} dataSource={data} />
+      <Input placeholder="Basic usage" onChange={handleSearch}/>
+      <Table columns={columns} dataSource={dataExample} />
     </div>
   );
 }
