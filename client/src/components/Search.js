@@ -7,31 +7,31 @@ import Highlighter from 'react-highlight-words';
 const dataExample = [
   {
     key: '1',
-    name: 'John Brown',
+    title: 'John Brown',
     type: 'Book',
-    age: 32,
-    address: 'New York No. 1 Lake Park',
+    rating: 32,
+    genres: 'New York No. 1 Lake Park',
   },
   {
     key: '2',
-    name: 'Joe Black',
+    title: 'Joe Black',
     type: 'Book',
-    age: 42,
-    address: 'London No. 1 Lake Park',
+    rating: 42,
+    genres: 'London No. 1 Lake Park',
   },
   {
     key: '3',
-    name: 'Jim Green',
+    title: 'Jim Green',
     type: 'Movie',
-    age: 32,
-    address: 'Sidney No. 1 Lake Park',
+    rating: 32,
+    genres: 'Sidney No. 1 Lake Park',
   },
   {
     key: '4',
-    name: 'Jim Red',
+    title: 'Jim Red',
     type: 'Book',
-    age: 32,
-    address: 'London No. 2 Lake Park',
+    rating: 32,
+    genres: 'London No. 2 Lake Park',
   },
 ];
 
@@ -57,7 +57,7 @@ function Search() {
         console.log("hi");
     };
     fetchResults();
-    // setData(results);
+    // setData(results.data);
   }, [searchText]);
 
   // const getColumnSearchProps = (dataIndex) => ({
@@ -157,8 +157,8 @@ function Search() {
   const columns = [
     {
       title: 'Title',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'title',
+      key: 'title',
       width: '30%',
     },
     {
@@ -181,16 +181,16 @@ function Search() {
     },
     {
       title: 'Rating',
-      dataIndex: 'age',
-      key: 'age',
+      dataIndex: 'rating',
+      key: 'rating',
       width: '20%',
       sorter: (a, b) => a.age - b.age,
       sortDirections: ['descend', 'ascend'],
     },
     {
       title: 'Genres',
-      dataIndex: 'address',
-      key: 'address',
+      dataIndex: 'genres',
+      key: 'genres',
     },
   ];
 
