@@ -1,11 +1,7 @@
-import React from "react";
-import { Input } from 'antd';
-
-
-
-import React, { useRef, useState } from 'react';
-import { SearchOutlined } from '@ant-design/icons';
+import React, { useRef, useState } from "react";
 import { Button, Input, Space, Table } from 'antd';
+
+import { SearchOutlined } from '@ant-design/icons';
 import Highlighter from 'react-highlight-words';
 const data = [
   {
@@ -34,6 +30,9 @@ const data = [
   },
 ];
 
+
+
+function Search() {
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef(null);
@@ -67,10 +66,10 @@ const data = [
         />
         <Space>
           <Button
-            type=“primary”
+            type="primary"
             onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
             icon={<SearchOutlined />}
-            size=“small”
+            size="small"
             style={{
               width: 90,
             }}
@@ -79,7 +78,7 @@ const data = [
           </Button>
           <Button
             onClick={() => clearFilters && handleReset(clearFilters)}
-            size=“small”
+            size="small"
             style={{
               width: 90,
             }}
@@ -87,8 +86,8 @@ const data = [
             Reset
           </Button>
           <Button
-            type=“link”
-            size=“small”
+            type="link"
+            size="small"
             onClick={() => {
               confirm({
                 closeDropdown: false,
@@ -100,8 +99,8 @@ const data = [
             Filter
           </Button>
           <Button
-            type=“link”
-            size=“small”
+            type="link"
+            size="small"
             onClick={() => {
               close();
             }}
@@ -114,7 +113,7 @@ const data = [
     filterIcon: (filtered) => (
       <SearchOutlined
         style={{
-          color: filtered ? '#1890FF' : undefined,
+          color: filtered ? '#1890ff' : undefined,
         }}
       />
     ),
@@ -129,7 +128,7 @@ const data = [
       searchedColumn === dataIndex ? (
         <Highlighter
           highlightStyle={{
-            backgroundColor: '#FFC069',
+            backgroundColor: '#ffc069',
             padding: 0,
           }}
           searchWords={[searchText]}
@@ -165,9 +164,6 @@ const data = [
     },
   ];
 
-
-
-function Search() {
   return (
     <div>
       <Input placeholder="Basic usage" />
