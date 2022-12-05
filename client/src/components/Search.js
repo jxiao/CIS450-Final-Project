@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Input, Table, Modal } from "antd";
-import DetailedView from "./DetailedView";
+import { Navbar, DetailedView } from "./index.js";
 import { getSearch } from "../modules/api";
 
 function Search() {
@@ -72,6 +72,7 @@ function Search() {
 
   return (
     <div>
+      <Navbar />
       <Input
         placeholder="Type in a title, author, director, or actor, and press enter to search"
         onPressEnter={handleSearch}
