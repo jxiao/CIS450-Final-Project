@@ -1,41 +1,6 @@
-import React, { useRef, useState, useEffect } from "react";
-import { Button, Input, Space, Table } from 'antd';
+import React, { useState, useEffect } from "react";
+import { Input, Table } from 'antd';
 import {getSearch} from '../modules/api';
-
-import { SearchOutlined } from '@ant-design/icons';
-import Highlighter from 'react-highlight-words';
-const dataExample = [
-  {
-    key: '1',
-    title: 'John Brown',
-    type: 'Book',
-    rating: 32,
-    genres: 'New York No. 1 Lake Park',
-  },
-  {
-    key: '2',
-    title: 'Joe Black',
-    type: 'Book',
-    rating: 42,
-    genres: 'London No. 1 Lake Park',
-  },
-  {
-    key: '3',
-    title: 'Jim Green',
-    type: 'Movie',
-    rating: 32,
-    genres: 'Sidney No. 1 Lake Park',
-  },
-  {
-    key: '4',
-    title: 'Jim Red',
-    type: 'Book',
-    rating: 32,
-    genres: 'London No. 2 Lake Park',
-  },
-];
-
-
 
 function Search() {
   const [searchText, setSearchText] = useState('');
@@ -45,126 +10,36 @@ function Search() {
   };
 
 
-//   const handleReset = (clearFilters) => {
-//     setSearchText('');
-//   };
-
   useEffect(() => {
     const fetchResults = async () => {
         const results = await getSearch({
         search: searchText,
         });
-        console.log("hi");
+        console.log("ran search");
+        const newArr = []
+        for (let i = 0; i < results.data.results.length; i++) {
+            newArr[i] = results.data.results[i] 
+            newArr[i].key = i 
+        }
+        setData(newArr);
     };
-    fetchResults();
-    // setData(results.data);
+     if (searchText !== "") {
+        fetchResults();
+     }
   }, [searchText]);
 
-  // const getColumnSearchProps = (dataIndex) => ({
-  //   filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
-  //     <div
-  //       style={{
-  //         padding: 8,
-  //       }}
-  //       onKeyDown={(e) => e.stopPropagation()}
-  //     >
-  //       <Input
-  //         ref={searchInput}
-  //         placeholder={`Search ${dataIndex}`}
-  //         value={selectedKeys[0]}
-  //         onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-  //         onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
-  //         style={{
-  //           marginBottom: 8,
-  //           display: 'block',
-  //         }}
-  //       />
-  //       <Space>
-  //         <Button
-  //           type="primary"
-  //           onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-  //           icon={<SearchOutlined />}
-  //           size="small"
-  //           style={{
-  //             width: 90,
-  //           }}
-  //         >
-  //           Search
-  //         </Button>
-  //         <Button
-  //           onClick={() => clearFilters && handleReset(clearFilters)}
-  //           size="small"
-  //           style={{
-  //             width: 90,
-  //           }}
-  //         >
-  //           Reset
-  //         </Button>
-  //         <Button
-  //           type="link"
-  //           size="small"
-  //           onClick={() => {
-  //             confirm({
-  //               closeDropdown: false,
-  //             });
-  //             setSearchText(selectedKeys[0]);
-  //             setSearchedColumn(dataIndex);
-  //           }}
-  //         >
-  //           Filter
-  //         </Button>
-  //         <Button
-  //           type="link"
-  //           size="small"
-  //           onClick={() => {
-  //             close();
-  //           }}
-  //         >
-  //           close
-  //         </Button>
-  //       </Space>
-  //     </div>
-  //   ),
-  //   filterIcon: (filtered) => (
-  //     <SearchOutlined
-  //       style={{
-  //         color: filtered ? '#1890ff' : undefined,
-  //       }}
-  //     />
-  //   ),
-  //   onFilter: (value, record) =>
-  //     record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
-  //   onFilterDropdownOpenChange: (visible) => {
-  //     if (visible) {
-  //       setTimeout(() => searchInput.current?.select(), 100);
-  //     }
-  //   },
-  //   render: (text) =>
-  //     searchedColumn === dataIndex ? (
-  //       <Highlighter
-  //         highlightStyle={{
-  //           backgroundColor: '#ffc069',
-  //           padding: 0,
-  //         }}
-  //         searchWords={[searchText]}
-  //         autoEscape
-  //         textToHighlight={text ? text.toString() : ''}
-  //       />
-  //     ) : (
-  //       text
-  //     ),
-  // });
+
   const columns = [
     {
       title: 'Title',
-      dataIndex: 'title',
-      key: 'title',
+      dataIndex: 'Title',
+      key: 'Title',
       width: '30%',
     },
     {
       title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'Type',
+      key: 'Type',
       width: '20%',
       filters: [
         {
@@ -189,15 +64,15 @@ function Search() {
     },
     {
       title: 'Genres',
-      dataIndex: 'genres',
-      key: 'genres',
+      dataIndex: 'GenreList',
+      key: 'GenreList',
     },
   ];
 
   return (
     <div>
-      <Input placeholder="Basic usage" onChange={handleSearch}/>
-      <Table columns={columns} dataSource={dataExample} />
+      <Input placeholder="Basic usage" onPressEnter={handleSearch}/>
+      <Table columns={columns} dataSource={data} />
     </div>
   );
 }

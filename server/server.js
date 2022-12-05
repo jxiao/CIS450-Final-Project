@@ -16,7 +16,7 @@ const connection = mysql.createConnection({
 connection.connect();
 
 // whitelist localhost 3000
-app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
+app.use(cors({ credentials: true, origin: ["http://localhost:3001"] }));
 
 /**
  * BOOK ROUTES
@@ -385,7 +385,8 @@ app.get("/genres", async (req, res) => {
 });
 
 app.get("/search", async (req, res) => {
-  const { query: search } = req.query;
+  
+  const { search } = req.query;
   const query = `
     WITH Matched_books AS (
       SELECT ISBN, Title, 'book' AS Type, rating
