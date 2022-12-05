@@ -119,7 +119,7 @@ app.get("/authors/:id", async (req, res) => {
 
 app.get("/movies", async (req, res) => {
   const { genres, director, minRating, numResults } = req.query;
-  const existsFilter = genre || director || minRating;
+  const existsFilter = genres || director || minRating;
   let query = `SELECT * FROM Movies ${numResults ? `LIMIT ${numResults}` : ""}`;
   if (existsFilter) {
     const whereClauses = [];
@@ -262,7 +262,10 @@ app.get("/directors", async (req, res) => {
 });
 
 app.get("/directors/best", async (req, res) => {
-  const { numRaters, numMovies } = req.query;
+  // const { numRaters, numMovies } = req.query;
+  console.log("here in directors best");
+  let numRaters = 2;
+  let numMovies = 2;
   const query = `
     WITH MovieRatings AS (
       SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
@@ -307,9 +310,13 @@ app.get("/directors/best", async (req, res) => {
     JOIN Movies M ON M.movie_id = O.movie_id;
   `;
   connection.query(query, (error, results) => {
+    console.log("sedning query");
     if (error) {
+      console.log("here in error");
       res.status(400).json({ error: error });
     } else if (results) {
+      console.log("here in results");
+      console.log(results);
       res.status(200).json({ directors: results });
     }
   });

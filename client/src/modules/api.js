@@ -23,7 +23,7 @@ export const postLogin = async (username, password) => {
 export const bestDirector = async () => {
   try {
     console.log("yep");
-    const resp = await axios.get(`${rootURL}/directors/best`, { withCredentials: true });
+    const resp = await axios.get(`http://localhost:8080/directors/best`, { withCredentials: true });
     return { status: resp.status, data: resp.data };
   } catch (error) {
     console.log("ERROR");
@@ -33,7 +33,7 @@ export const bestDirector = async () => {
 
 export const getBooks = async () => {
   try {
-    const resp = await axios.get(`${rootURL}/books`);
+    const resp = await axios.get(`http://localhost:8080/books`);
     return { status: resp.status, data: resp.data };
   } catch (error) {
     return { status: error.response.status, data: error.response.data };
@@ -42,7 +42,7 @@ export const getBooks = async () => {
 
 export const getMovies = async () => {
   try {
-    const resp = await axios.get(`${rootURL}/movies`);
+    const resp = await axios.get(`http://localhost:8080/movies`);
     return { status: resp.status, data: resp.data };
   } catch (error) {
     return { status: error.response.status, data: error.response.data };
