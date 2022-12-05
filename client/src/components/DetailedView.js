@@ -43,7 +43,7 @@ const { Meta } = Card;
 const LEFT_COLUMN_RATIO = 30;
 const translate = (item, isBook) => {
   const obj = {
-    isBook,
+    type: item.Type || (isBook ? "Book" : "Movie"),
     id: isBook ? item.ISBN : item.movieId,
     Title: item.Title,
     Rating: item.Rating,
@@ -98,7 +98,6 @@ function DetailedView({ id, isBook }) {
         }
         setIsLoading(false);
       } catch (error) {
-        console.log(error);
         setIsLoading(false);
       }
     };
@@ -108,8 +107,10 @@ function DetailedView({ id, isBook }) {
           ? getSimilarByBookId(id)
           : getSimilarByMovieId(id));
         if (status === 200) {
-          // TODO : determine similarity result schema
-          setSimilarData(data.map((item) => translate(item, isBook)));
+          const res = isBook ? data.books : data.movies;
+          setSimilarData(
+            res.map((item) => translate(item, item.Type === "Book"))
+          );
         }
       } catch (error) {
         console.log(error);
@@ -183,17 +184,14 @@ function DetailedView({ id, isBook }) {
                   <img
                     alt={item.Title}
                     src={
-                      item.isBook
+                      item.type === "Book"
                         ? item.ImageURL
                         : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
                     }
                   />
                 }
               >
-                <Meta
-                  Title={item.Title}
-                  Description={item.isBook ? "Book" : "Movie"}
-                />
+                <Meta title={item.Title} description={item.type} />
               </Card>
             </div>
           ))}
