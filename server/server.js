@@ -61,9 +61,11 @@ app.get("/books", async (req, res) => {
 app.get("/book/:id", async (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT *
+    SELECT ISBN, NumPages, GoodreadsLink, Title, ImageURL, Description, Rating, GROUP_CONCAT(DISTINCT GenreName) AS genre, GROUP_CONCAT(DISTINCT AuthorName) AS authors
     FROM Books
-    WHERE ISBN = ${id}
+    JOIN Writes ON Books.ISBN = Writes.BookISBN
+    JOIN GenreOfBook ON Books.ISBN = GenreOfBook.BookISBN
+    WHERE ISBN = '${id}'
   `;
   connection.query(query, (error, results) => {
     if (error) {
@@ -157,9 +159,15 @@ app.get("/movies", async (req, res) => {
 app.get("/movie/:id", async (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT *
+    SELECT Movies.Movie_id as movieId, Movies.Title, Movies.Overview, AVG(Rating) as Rating, GROUP_CONCAT(DISTINCT GenreName) as genre, GROUP_CONCAT(DISTINCT Directors.Name) as directors, GROUP_CONCAT(DISTINCT Actors.Name) as actors
     FROM Movies
-    WHERE Movie_id = ${id}
+    JOIN Directs ON Movies.Movie_id = Directs.Movie_id
+    JOIN Directors ON Directors.Id = Directs.DirectorId
+    JOIN Plays ON Movies.Movie_id = Plays.Movie_id
+    JOIN Actors ON Actors.Id = Plays.ActorId
+    JOIN GenreOfMovie ON Movies.Movie_id = GenreOfMovie.Movie_id
+    JOIN Ratings ON Ratings.MovieId = Movies.Movie_id
+    WHERE Movies.Movie_id = ${id};
   `;
   connection.query(query, (error, results) => {
     if (error) {
