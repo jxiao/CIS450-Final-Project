@@ -43,15 +43,15 @@ function Search() {
       width: '20%',
       filters: [
         {
-          text: 'Book',
-          value: 'Book',
+          text: 'book',
+          value: 'book',
         },
         {
-          text: 'Movie',
-          value: 'Movie',
+          text: 'movie',
+          value: 'movie',
         },
       ],
-      onFilter: (value, record) => record.type.includes(value),
+      onFilter: (value, record) => record.Type.includes(value),
       filterSearch: true,
     },
     {
@@ -59,7 +59,7 @@ function Search() {
       dataIndex: 'rating',
       key: 'rating',
       width: '20%',
-      sorter: (a, b) => a.age - b.age,
+      sorter: (a, b) => a.rating - b.rating,
       sortDirections: ['descend', 'ascend'],
     },
     {
@@ -71,7 +71,7 @@ function Search() {
 
   return (
     <div>
-      <Input placeholder="Basic usage" onPressEnter={handleSearch}/>
+      <Input placeholder="Type in a title, author, director, or actor, and press enter to search" onPressEnter={handleSearch}/>
       <Table columns={columns} dataSource={data} />
     </div>
   );
