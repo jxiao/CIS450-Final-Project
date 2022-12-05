@@ -62,6 +62,27 @@ const translate = (item, isBook) => {
   }
   return obj;
 };
+
+/*
+import React from "react";
+import { Modal } from "antd";
+import DetailedView from "./DetailedView";
+
+const [isModalVisible, setIsModalVisible] = useState(false);
+
+<h2 onClick={() => setIsModalVisible(true)}>Detailed View?</h2>
+<Modal
+  open={isModalVisible}
+  onOk={() => setIsModalVisible(false)}
+  onCancel={() => setIsModalVisible(false)}
+  footer={null}
+  width={1000}
+>
+  <DetailedView id="002914180X" isBook={true} />
+  <DetailedView id="862" isBook={false} />
+</Modal>
+*/
+
 function DetailedView({ id, isBook }) {
   const [data, setData] = useState(null);
   const [similarData, setSimilarData] = useState([]);
