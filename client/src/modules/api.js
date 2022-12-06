@@ -24,6 +24,17 @@ export const bestDirector = async () => {
   }
 };
 
+export const getSearch = async (search) => {
+  try {
+    const resp = await axios.get(`${rootURL}/search`, {
+      params: search,
+    });
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+};
+
 export const getMovieById = async (id) => {
   try {
     const resp = await axios.get(`${rootURL}/movie/${id}`);
