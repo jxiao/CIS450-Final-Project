@@ -187,7 +187,7 @@ app.get("/authors/:id", async (req, res) => {
 
 app.get("/movies", async (req, res) => {
   const { genres, director, minRating, numResults } = req.query;
-  const existsFilter = genre || director || minRating;
+  const existsFilter = genres || director || minRating;
   let query = `SELECT * FROM Movies ${numResults ? `LIMIT ${numResults}` : ""}`;
   if (existsFilter) {
     const whereClauses = [];
@@ -521,7 +521,6 @@ app.get("/genres", async (req, res) => {
 });
 
 app.get("/search", async (req, res) => {
-  
   const { search } = req.query;
   const query = `
     WITH Matched_books AS (
@@ -618,7 +617,7 @@ app.get("/bookrecommendation", async (req, res) => {
       WHERE GenreName IN ${genres}
       GROUP BY BookISBN
       ORDER BY GenresMatched DESC
-    ),
+    )
       SELECT Title, ISBN AS Id, 'book' as Type
       FROM Books A
       JOIN (SELECT BookISBN FROM books_genres) B ON A.ISBN = B.BookISBN
@@ -626,6 +625,7 @@ app.get("/bookrecommendation", async (req, res) => {
       LIMIT 10
   `;
   connection.query(query, (error, results) => {
+    console.log(error, results);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
@@ -634,10 +634,10 @@ app.get("/bookrecommendation", async (req, res) => {
   });
 });
 
-  app.get("/movierecommendation", async (req, res) => {
-    const { genres, minRating, minNumRaters } = req.query;
-    // console.log(genres);
-    const query = `
+app.get("/movierecommendation", async (req, res) => {
+  const { genres, minRating, minNumRaters } = req.query;
+  console.log("movie rec", req.query);
+  const query = `
     WITH movies_genres AS (
       SELECT Movie_id, COUNT(*) AS GenresMatched
       FROM GenreOfMovie
@@ -657,23 +657,23 @@ app.get("/bookrecommendation", async (req, res) => {
       JOIN (SELECT MovieId FROM Movie_ratings) R ON A.Movie_id = R.MovieId
       JOIN movies_genres G ON A.Movie_id = G.Movie_id
       LIMIT 5
-    ),
+    )
     (SELECT Title, Id, Type
     FROM Five_movies)
   `;
-    connection.query(query, (error, results) => {
-      if (error) {
-        res.status(400).json({ error: error });
-      } else if (results) {
-        res.status(200).json({ results: results });
-      }
-    });
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else if (results) {
+      res.status(200).json({ results: results });
+    }
   });
-
+});
 
 app.get("/allrecommendations", async (req, res) => {
   const { genres, minRating, minNumRaters } = req.query;
   // console.log(genres);
+  console.log("all recs", req.query);
   const query = `
     WITH books_genres AS (
       SELECT BookISBN, COUNT(*) AS GenresMatched
@@ -716,6 +716,7 @@ app.get("/allrecommendations", async (req, res) => {
     FROM Five_movies)
   `;
   connection.query(query, (error, results) => {
+    console.log(error);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
