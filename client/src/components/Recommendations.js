@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -9,6 +9,7 @@ import {
   Select,
   Slider,
 } from 'antd';
+import { getAllRecommendations, getBookRecommendations, getMovieRecommendations } from '../modules/api';
 
 const { Option } = Select;
 const formItemLayout = {
@@ -21,21 +22,47 @@ const formItemLayout = {
 };
 
 function Recommendations() {
+  const [data, setData] = useState(null);
   const onFinish = (values) => {
     console.log('Received values of form: ', values);
-    const fetchResults = async () => {
-      // const results = await getSearch({
-      //   search: searchText,
-      // });
-      // console.log("ran search");
-      // const newArr = results.data.results.map((item, i) => ({
-      //   ...item,
-      //   key: i,
-      // }));
-      // setData(newArr);
-      // console.log(newArr);
+    let genresReformatted = `('${values.genres.join("','")}')`;
+    console.log("reformat" + genresReformatted);
+    const fetchAllResults = async () => {
+      const results = await getAllRecommendations({
+        genres: genresReformatted, 
+        minRating: values.rating,
+        minNumRaters: values.minRaters
+      });
+      console.log("ran both query");
+      console.log(results.data.results);
+      setData(results.data.results);
     };
-    fetchResults();
+    const fetchBooks= async () => {
+      const results = await getBookRecommendations({
+        genres: genresReformatted, 
+        minRating: values.rating,
+      });
+      console.log("ran book query");
+      console.log(results.data.results);
+      setData(results.data.results);
+    };
+    const fetchMovies= async () => {
+      const results = await getMovieRecommendations({
+        genres: genresReformatted, 
+        minRating: values.rating,
+        minNumRaters: values.minRaters
+      });
+      console.log("ran movie query");
+      console.log(results.data.results);
+      setData(results.data.results);
+    };
+    if (values.media.length === 2){
+      fetchAllResults();
+    } else if (values.media[0]==="Books") {
+      fetchBooks();
+    } else {
+      fetchMovies();
+    }
   };
 
 
@@ -98,12 +125,13 @@ function Recommendations() {
           <Option value="biography">Biography</Option>
           <Option value="fiction">Fiction</Option>
           <Option value="nonfiction">Nonfiction</Option>
+          <Option value="action">Action</Option>
         </Select>
       </Form.Item>
 
       <Form.Item 
         name="rating" 
-        label="Average rating" 
+        label="Minimum Average Rating" 
         rules={[
           {
             required: true,
@@ -111,11 +139,9 @@ function Recommendations() {
         ]}
       >
         <Slider
-          range
           min={0}
           max={10}
           step={0.01}
-          defaultValue={[0, 10]}
           marks={{
             0: '0',
             10: '10',
@@ -124,19 +150,19 @@ function Recommendations() {
       </Form.Item>
 
       <Form.Item
-        name="min-raters"
-        label="Minimum no. of raters"
+        name="minRaters"
+        label="Minimum no. of raters for the movies"
         rules={[
           {
-            required: true,
+            required: false,
             message: 'Please pick an item',
           },
         ]}
       >
         <Radio.Group>
-          <Radio.Button value="a">0</Radio.Button>
-          <Radio.Button value="b">1</Radio.Button>
-          <Radio.Button value="c">2</Radio.Button>
+          <Radio.Button value="0">0</Radio.Button>
+          <Radio.Button value="1">1</Radio.Button>
+          <Radio.Button value="2">2</Radio.Button>
         </Radio.Group>
       </Form.Item>
 
