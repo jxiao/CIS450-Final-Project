@@ -23,7 +23,22 @@ const formItemLayout = {
 function Recommendations() {
   const onFinish = (values) => {
     console.log('Received values of form: ', values);
+    const fetchResults = async () => {
+      // const results = await getSearch({
+      //   search: searchText,
+      // });
+      // console.log("ran search");
+      // const newArr = results.data.results.map((item, i) => ({
+      //   ...item,
+      //   key: i,
+      // }));
+      // setData(newArr);
+      // console.log(newArr);
+    };
+    fetchResults();
   };
+
+
   return (
     <Form
       name="validate_other"
@@ -80,9 +95,9 @@ function Recommendations() {
         ]}
       >
         <Select mode="multiple" placeholder="Please select your preferred genres">
-          <Option value="red">Red</Option>
-          <Option value="green">Green</Option>
-          <Option value="blue">Blue</Option>
+          <Option value="biography">Biography</Option>
+          <Option value="fiction">Fiction</Option>
+          <Option value="nonfiction">Nonfiction</Option>
         </Select>
       </Form.Item>
 
@@ -119,8 +134,9 @@ function Recommendations() {
         ]}
       >
         <Radio.Group>
-          <Radio.Button value="a">1</Radio.Button>
-          <Radio.Button value="b">2</Radio.Button>
+          <Radio.Button value="a">0</Radio.Button>
+          <Radio.Button value="b">1</Radio.Button>
+          <Radio.Button value="c">2</Radio.Button>
         </Radio.Group>
       </Form.Item>
 
