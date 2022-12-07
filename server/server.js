@@ -23,9 +23,8 @@ app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
  */
 app.get("/books", async (req, res) => {
   const { genres, author, minRating, numResults } = req.query;
-  const existsFilter = genres || author || minRating;
   let query = `SELECT * FROM Books ${numResults ? `LIMIT ${numResults}` : ""}`;
-  if (existsFilter) {
+  if (genres || author || minRating) {
     const whereClauses = [];
     if (author) {
       whereClauses.push(`author LIKE '%${author}%'`);
@@ -33,19 +32,32 @@ app.get("/books", async (req, res) => {
     if (minRating) {
       whereClauses.push(`rating >= ${minRating}`);
     }
+    let genresFormatted = genres;
+    if (genres && genres.length > 0) {
+      genres = `(${genres.map((g) => `'${g}'`).join(",")})`;
+    }
     const whereString = whereClauses.join(" AND ");
     query = `
       WITH GenreSatisfyingBooks AS (
         SELECT BookISBN
         FROM GenreOfBook
-        WHERE GenreName IN ${genres}
+        ${
+          genres && genres.length > 0
+            ? `WHERE GenreName IN ${genresFormatted}`
+            : ""
+        }
         GROUP BY BookISBN
-        HAVING COUNT(*) = ${genres.length}
+        ${
+          genres && genres.length > 0
+            ? `HAVING COUNT(*) = ${genres.length}`
+            : ""
+        }
       )
       SELECT * 
       FROM Books b
       JOIN GenreSatisfyingBooks g ON b.ISBN = g.BookISBN
-      WHERE ${whereString}  
+      ${whereString ? `WHERE ${whereString}` : ""}
+      ORDER BY RAND() 
       ${numResults ? `LIMIT ${numResults}` : ""}
     `;
   }
@@ -61,9 +73,11 @@ app.get("/books", async (req, res) => {
 app.get("/book/:id", async (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT *
+    SELECT ISBN, NumPages, GoodreadsLink, Title, ImageURL, Description, Rating, GROUP_CONCAT(DISTINCT GenreName) AS genre, GROUP_CONCAT(DISTINCT AuthorName) AS authors
     FROM Books
-    WHERE ISBN = ${id}
+    JOIN Writes ON Books.ISBN = Writes.BookISBN
+    JOIN GenreOfBook ON Books.ISBN = GenreOfBook.BookISBN
+    WHERE ISBN = '${id}'
   `;
   connection.query(query, (error, results) => {
     if (error) {
@@ -76,7 +90,73 @@ app.get("/book/:id", async (req, res) => {
   });
 });
 
-// TODO: /book/:id/similar
+app.get("/book/:id/similar", async (req, res) => {
+  const { id } = req.params;
+  const { numResults } = req.query;
+  const genreQuery = `
+    SELECT GenreName
+    FROM GenreOfBook
+    WHERE BookISBN = '${id}'
+  `;
+  connection.query(genreQuery, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else {
+      const genres = `(${results
+        .map((result) => `'${result.GenreName}'`)
+        .join(",")})`;
+      const authorQuery = `
+        SELECT AuthorName
+        FROM Writes
+        WHERE BookISBN = '${id}'
+      `;
+      connection.query(authorQuery, (error, results) => {
+        if (error) {
+          res.status(400).json({ error: error });
+        } else {
+          const authors = `(${results
+            .map((result) => `'${result.Name}'`)
+            .join(",")})`;
+          const query = `
+          WITH GenreSatisfyingBooks AS (
+            SELECT BookISBN, COUNT(*) AS numSimilar
+            FROM GenreOfBook
+            WHERE GenreName IN ${genres}
+            GROUP BY BookISBN
+            ORDER BY numSimilar DESC
+          ),
+          AuthorSatisfyingBooks AS (
+            SELECT BookISBN, COUNT(*) AS numSimilar
+            FROM Writes
+            WHERE AuthorName IN ${authors}
+            GROUP BY BookISBN
+            ORDER BY numSimilar DESC
+          ),
+          Unioned AS (
+            SELECT * FROM GenreSatisfyingBooks
+            UNION
+            SELECT * FROM AuthorSatisfyingBooks
+          )
+          SELECT Books.ISBN as ISBN, Books.Title as Title, Books.ImageURL as ImageURL, "Book" as Type, SUM(numSimilar) AS numSimilar
+          FROM Unioned U
+          JOIN Books ON Books.ISBN = U.BookISBN
+          GROUP BY Books.ISBN, Books.Title, Type
+          HAVING Books.ISBN != '${id}'
+          ORDER BY numSimilar DESC
+          LIMIT ${numResults || 10};
+        `;
+          connection.query(query, (error, results) => {
+            if (error) {
+              res.status(400).json({ error: error });
+            } else {
+              res.status(200).json({ books: results });
+            }
+          });
+        }
+      });
+    }
+  });
+});
 
 app.get("/authors", async (req, res) => {
   const { name, gender } = req.query;
@@ -119,9 +199,8 @@ app.get("/authors/:id", async (req, res) => {
 
 app.get("/movies", async (req, res) => {
   const { genres, director, minRating, numResults } = req.query;
-  const existsFilter = genres || director || minRating;
   let query = `SELECT * FROM Movies ${numResults ? `LIMIT ${numResults}` : ""}`;
-  if (existsFilter) {
+  if (genres || director || minRating) {
     const whereClauses = [];
     if (director) {
       whereClauses.push(`director LIKE '%${director}%'`);
@@ -129,21 +208,30 @@ app.get("/movies", async (req, res) => {
     if (minRating) {
       whereClauses.push(`rating >= ${minRating}`);
     }
+    let genresFormatted = genres;
+    if (genres) {
+      genres = `(${genres.map((g) => `'${g}'`).join(",")})`;
+    }
     const whereString = whereClauses.join(" AND ");
     query = `
-      WITH GenreSatisfyingMovies AS (
-        SELECT MovieID
-        FROM GenreOfMovie
-        WHERE GenreName IN ${genres}
-        GROUP BY MovieID
-        HAVING COUNT(*) = ${genres.length}
-      )
-      SELECT *
-      FROM Movies m
-      JOIN GenreSatisfyingMovies g ON m.ID = g.MovieID
-      WHERE ${whereString}
-      ${numResults ? `LIMIT ${numResults}` : ""}
-    `;
+    WITH GenreSatisfyingMovies AS (
+      SELECT MovieID
+      FROM GenreOfMovie
+      ${
+        genres && genres.length > 0
+          ? `WHERE GenreName IN ${genresFormatted}`
+          : ""
+      }
+      GROUP BY MovieID
+      ${genres && genres.length > 0 ? `HAVING COUNT(*) = ${genres.length}` : ""}
+    )
+    SELECT *
+    FROM Movies m
+    JOIN GenreSatisfyingMovies g ON m.ID = g.MovieID
+    ${whereString ? `WHERE ${whereString}` : ""}
+    ORDER BY RAND()
+    ${numResults ? `LIMIT ${numResults}` : ""}
+  `;
   }
   connection.query(query, (error, results) => {
     if (error) {
@@ -157,9 +245,15 @@ app.get("/movies", async (req, res) => {
 app.get("/movie/:id", async (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT *
+    SELECT Movies.Movie_id as movieId, Movies.Title, Movies.Overview, AVG(Rating) as Rating, GROUP_CONCAT(DISTINCT GenreName) as genre, GROUP_CONCAT(DISTINCT Directors.Name) as directors, GROUP_CONCAT(DISTINCT Actors.Name) as actors
     FROM Movies
-    WHERE Movie_id = ${id}
+    JOIN Directs ON Movies.Movie_id = Directs.Movie_id
+    JOIN Directors ON Directors.Id = Directs.DirectorId
+    JOIN Plays ON Movies.Movie_id = Plays.Movie_id
+    JOIN Actors ON Actors.Id = Plays.ActorId
+    JOIN GenreOfMovie ON Movies.Movie_id = GenreOfMovie.Movie_id
+    JOIN Ratings ON Ratings.MovieId = Movies.Movie_id
+    WHERE Movies.Movie_id = ${id};
   `;
   connection.query(query, (error, results) => {
     if (error) {
@@ -175,8 +269,70 @@ app.get("/movie/:id", async (req, res) => {
 app.get("/movie/:id/similar", async (req, res) => {
   const { id } = req.params;
   const { numResults } = req.query;
-  // Start by querying for directors and actors of the current movie
-  // With those results, run complex query 3
+
+  const directorsQuery = `
+    SELECT DirectorId
+    FROM Directs
+    WHERE Movie_id = ${id}
+  `;
+  connection.query(directorsQuery, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else {
+      const directors = `(${results
+        .map((result) => `'${result.DirectorId}'`)
+        .join(",")})`;
+      const actorsQuery = `
+        SELECT ActorId
+        FROM Plays
+        WHERE Movie_id = ${id}
+      `;
+      connection.query(actorsQuery, (error, results) => {
+        if (error) {
+          res.status(400).json({ error: error });
+        } else {
+          const actors = `(${results
+            .map((result) => `'${result.ActorId}'`)
+            .join(",")})`;
+          const query = `
+            WITH Director_movies AS (
+              SELECT Movie_id, COUNT(*) AS numSimilar
+              FROM Directs
+              WHERE DirectorId IN ${directors}
+              GROUP BY DirectorId
+              ORDER BY numSimilar DESC
+            ),
+            Actor_movies AS (
+              SELECT Movie_id, COUNT(*) AS numSimilar
+              FROM Plays
+              WHERE ActorId IN ${actors}
+              GROUP BY ActorId
+              ORDER BY numSimilar DESC
+            ),
+            Unioned AS (
+              SELECT * FROM Director_movies
+              UNION
+              SELECT * FROM Actor_movies
+            )
+            SELECT Movies.Movie_id as movieId, Movies.Title as Title, "Movie" as Type, SUM(numSimilar) AS numSimilar
+            FROM Unioned U
+            JOIN Movies ON Movies.Movie_id = U.Movie_id
+            GROUP BY U.Movie_id, Movies.Title, Type
+            HAVING Movies.Movie_id != ${id}
+            ORDER BY numSimilar DESC
+            LIMIT ${numResults || 10};
+          `;
+          connection.query(query, (error, results) => {
+            if (error) {
+              res.status(400).json({ error: error });
+            } else {
+              res.status(200).json({ movies: results });
+            }
+          });
+        }
+      });
+    }
+  });
 });
 
 app.get("/actors", async (req, res) => {
@@ -262,10 +418,8 @@ app.get("/directors", async (req, res) => {
 });
 
 app.get("/directors/best", async (req, res) => {
-  // const { numRaters, numMovies } = req.query;
+  const { numRaters, numMovies } = req.query;
   console.log("here in directors best");
-  let numRaters = 2;
-  let numMovies = 2;
   const query = `
     WITH MovieRatings AS (
       SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
@@ -392,7 +546,7 @@ app.get("/genres", async (req, res) => {
 });
 
 app.get("/search", async (req, res) => {
-  const { query: search } = req.query;
+  const { search } = req.query;
   const query = `
     WITH Matched_books AS (
       SELECT ISBN, Title, 'book' AS Type, rating
