@@ -13,11 +13,16 @@ export const getBookById = async (id) => {
     return { status: error.response.status, data: error.response.data };
   }
 };
-export const bestDirector = async () => {
+export const bestDirector = async ({ numRaters, numMovies }) => {
   try {
-    const resp = await axios.get(`${rootURL}/directors/best`, {
-      withCredentials: true,
-    });
+    const resp = await axios.get(
+      `${rootURL}/directors/best?numRaters=${numRaters || 1}&numMovies=${
+        numMovies || 1
+      }`,
+      {
+        withCredentials: true,
+      }
+    );
     return { status: resp.status, data: resp.data };
   } catch (error) {
     return { status: error.response.status, data: error.response.data };
@@ -44,9 +49,16 @@ export const getMovieById = async (id) => {
   }
 };
 
-export const getBooks = async () => {
+export const getBooks = async ({ genres, author, minRating, numResults }) => {
   try {
-    const resp = await axios.get(`${rootURL}/books`);
+    const query = `numResults=${numResults || 10}${
+      genres ? `&genres=${genres}` : ""
+    }${author ? `&author=${author}` : ""}${
+      minRating !== undefined && minRating !== null
+        ? `&minRating=${minRating}`
+        : ""
+    }`;
+    const resp = await axios.get(`${rootURL}/books?${query}`);
     return { status: resp.status, data: resp.data };
   } catch (error) {
     return { status: error.response.status, data: error.response.data };
@@ -62,9 +74,21 @@ export const getSimilarByBookId = async (id) => {
   }
 };
 
-export const getMovies = async () => {
+export const getMovies = async ({
+  genres,
+  director,
+  minRating,
+  numResults,
+}) => {
   try {
-    const resp = await axios.get(`${rootURL}/movies`);
+    const query = `numResults=${numResults || 10}${
+      genres ? `&genres=${genres}` : ""
+    }${director ? `&director=${director}` : ""}${
+      minRating !== undefined && minRating !== null
+        ? `&minRating=${minRating}`
+        : ""
+    }`;
+    const resp = await axios.get(`${rootURL}/movies?${query}`);
     return { status: resp.status, data: resp.data };
   } catch (error) {
     return { status: error.response.status, data: error.response.data };

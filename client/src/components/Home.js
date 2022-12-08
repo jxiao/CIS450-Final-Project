@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Carousel, Avatar, List } from "antd";
+import { List, Card } from "antd";
+import Carousel from "react-multi-carousel";
 import { bestDirector, getBooks, getMovies } from "../modules/api";
 import { Navbar } from "./index.js";
+import { translate as translateData } from "../modules/utility.js";
 
 const styles = {
   box: {
@@ -39,68 +41,118 @@ const styles = {
   },
 };
 
-const listData = [
-  {
-    title: "Ant Design Title 1",
+const { Meta } = Card;
+
+const responsive = {
+  desktop: {
+    breakpoint: { max: 3000, min: 1024 },
+    items: 3,
+    slidesToSlide: 3, // optional, default to 1.
   },
-  {
-    title: "Ant Design Title 2",
+  tablet: {
+    breakpoint: { max: 1024, min: 464 },
+    items: 2,
+    slidesToSlide: 2, // optional, default to 1.
   },
-  {
-    title: "Ant Design Title 3",
+  mobile: {
+    breakpoint: { max: 464, min: 0 },
+    items: 1,
+    slidesToSlide: 1, // optional, default to 1.
   },
-  {
-    title: "Ant Design Title 4",
-  },
-];
+};
 
 function Home() {
-  const [bestData, setBestData] = useState();
-  const [bookData, setBookData] = useState();
-  const [movieData, setMovieData] = useState();
+  const [bestData, setBestData] = useState([]);
+  const [carouselData, setCarouselData] = useState([]);
   useEffect(() => {
-    async function fetchData() {
-      const { status, data } = await bestDirector();
-      console.log(data);
-      setBestData(data);
-      const { status: bookStatus, data: bookData } = await getBooks();
-      console.log(bookData);
-      setBookData(bookData);
-      const { status: movieStatus, data: movieData } = await getMovies();
-      console.log(movieData);
-      setMovieData(movieData);
+    function interleaveArrays(arr1, arr2) {
+      const result = [];
+      for (let i = 0; i < arr1.length; i++) {
+        result.push(arr1[i]);
+        result.push(arr2[i]);
+      }
+      return result;
     }
-    fetchData();
+    async function fetchBestDirector() {
+      const { data } = await bestDirector({
+        numRaters: 1,
+        numMovies: 1,
+      });
+      console.log(data);
+      setBestData(data.directors);
+    }
+    async function fetchBooksAndMovies() {
+      const NUM_ITEMS = 10;
+      const { data: bookData } = await getBooks({
+        numResults: 2 * NUM_ITEMS,
+      });
+      const { data: movieData } = await getMovies({
+        numResults: 2 * NUM_ITEMS,
+      });
+      console.log(bookData, movieData);
+      setCarouselData(
+        interleaveArrays(
+          bookData.books
+            .sort(() => 0.5 - Math.random())
+            .slice(0, NUM_ITEMS)
+            .map((item) => translateData(item, true)),
+          movieData.movies
+            .sort(() => 0.5 - Math.random())
+            .slice(0, NUM_ITEMS)
+            .map((item) => translateData(item, false))
+        )
+      );
+    }
+    fetchBestDirector();
+    fetchBooksAndMovies();
   }, []);
 
   return (
     <div>
       <Navbar />
       <h1 style={{ textAlign: "center" }}>Entertainment Engine</h1>
-      <Carousel autoplay>
-        <div>
-          <h3 style={styles.contentStyle}>A movie</h3>
-        </div>
-        <div>
-          <h3 style={styles.contentStyle}>Another Movie</h3>
-        </div>
-        <div>
-          <h3 style={styles.contentStyle}>A book</h3>
-        </div>
-        <div>
-          <h3 style={styles.contentStyle}>Another book</h3>
-        </div>
+      <Carousel
+        swipeable={false}
+        draggable={false}
+        showDots={true}
+        infinite={true}
+        autoPlay={true}
+        autoPlaySpeed={3000}
+        responsive={responsive}
+      >
+        {carouselData.map((item) => (
+          <div key={item.id}>
+            <Card
+              hoverable
+              style={{ width: 240, height: 350 }}
+              cover={
+                <img
+                  alt={item.Title}
+                  style={{ height: 250 }}
+                  src={
+                    item.type === "Book"
+                      ? item.ImageURL
+                      : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
+                  }
+                />
+              }
+            >
+              <Meta title={item.Title} description={item.type} />
+            </Card>
+          </div>
+        ))}
       </Carousel>
+      <h3>Best Directors</h3>
       <List
         itemLayout="horizontal"
-        dataSource={listData}
+        dataSource={bestData}
         renderItem={(item) => (
           <List.Item>
             <List.Item.Meta
               style={styles.listItem}
-              avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
-              title={<a href="https://ant.design">{item.title}</a>}
-              description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+              // avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
+              title={item.title}
+              description={<div>{item.name}</div>}
             />
           </List.Item>
         )}
