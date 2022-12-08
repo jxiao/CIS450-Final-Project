@@ -103,3 +103,35 @@ export const getSimilarByMovieId = async (id) => {
     return { status: error.response.status, data: error.response.data };
   }
 };
+
+export const getAllRecommendations = async (fields) => {
+  try {
+    const resp = await axios.get(`${rootURL}/allrecommendations`, {
+      params: fields,
+    });
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+};
+
+export const getMovieRecommendations = async (fields) => {
+  try {
+    const resp = await axios.get(`${rootURL}/movierecommendation`, {
+      params: fields,
+    });
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+};
+export const getBookRecommendations = async (fields) => {
+  try {
+    const resp = await axios.get(`${rootURL}/bookrecommendation`, {
+      params: fields,
+    });
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: error.response.data };
+  }
+};

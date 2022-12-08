@@ -633,8 +633,72 @@ app.get("/search", async (req, res) => {
   });
 });
 
-app.get("/recommendation", async (req, res) => {
+app.get("/bookrecommendation", async (req, res) => {
+  const { genres, minRating } = req.query;
+  const query = `
+    WITH books_genres AS (
+      SELECT BookISBN, COUNT(*) AS GenresMatched
+      FROM GenreOfBook
+      WHERE GenreName IN ${genres}
+      GROUP BY BookISBN
+      ORDER BY GenresMatched DESC
+    )
+      SELECT Title, ISBN AS Id, 'book' as Type
+      FROM Books A
+      JOIN (SELECT BookISBN FROM books_genres) B ON A.ISBN = B.BookISBN
+      WHERE Rating >= ${minRating}
+      LIMIT 10
+  `;
+  connection.query(query, (error, results) => {
+    console.log(error, results);
+    if (error) {
+      res.status(400).json({ error: error });
+    } else if (results) {
+      res.status(200).json({ results: results });
+    }
+  });
+});
+
+app.get("/movierecommendation", async (req, res) => {
   const { genres, minRating, minNumRaters } = req.query;
+  console.log("movie rec", req.query);
+  const query = `
+    WITH movies_genres AS (
+      SELECT Movie_id, COUNT(*) AS GenresMatched
+      FROM GenreOfMovie
+      WHERE GenreName IN ${genres}
+      GROUP BY Movie_id
+      ORDER BY GenresMatched DESC
+    ),
+    Movie_ratings AS (
+      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
+      FROM Ratings
+      GROUP BY MovieId
+      HAVING AverageRating >= ${minRating} AND NumRaters >= ${minNumRaters}
+    ),
+    Five_movies AS (
+      SELECT Title, A.Movie_id AS Id, 'movie' as Type
+      FROM Movies A
+      JOIN (SELECT MovieId FROM Movie_ratings) R ON A.Movie_id = R.MovieId
+      JOIN movies_genres G ON A.Movie_id = G.Movie_id
+      LIMIT 5
+    )
+    (SELECT Title, Id, Type
+    FROM Five_movies)
+  `;
+  connection.query(query, (error, results) => {
+    if (error) {
+      res.status(400).json({ error: error });
+    } else if (results) {
+      res.status(200).json({ results: results });
+    }
+  });
+});
+
+app.get("/allrecommendations", async (req, res) => {
+  const { genres, minRating, minNumRaters } = req.query;
+  // console.log(genres);
+  console.log("all recs", req.query);
   const query = `
     WITH books_genres AS (
       SELECT BookISBN, COUNT(*) AS GenresMatched
@@ -677,6 +741,7 @@ app.get("/recommendation", async (req, res) => {
     FROM Five_movies)
   `;
   connection.query(query, (error, results) => {
+    console.log(error);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
