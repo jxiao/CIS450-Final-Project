@@ -5,7 +5,6 @@ import {
   Col,
   Form,
   Radio,
-  InputNumber,
   Select,
   Slider,
   Table,
@@ -53,19 +52,6 @@ const columns = [
     onFilter: (value, record) => record.Type.includes(value),
     filterSearch: true,
   },
-  // {
-  //   title: "Rating",
-  //   dataIndex: "rating",
-  //   key: "rating",
-  //   width: "20%",
-  //   sorter: (a, b) => a.rating - b.rating,
-  //   sortDirections: ["descend", "ascend"],
-  // },
-  // {
-  //   title: "Genres",
-  //   dataIndex: "GenreList",
-  //   key: "GenreList",
-  // },
 ];
 
 function Recommendations() {
@@ -195,10 +181,12 @@ function Recommendations() {
             mode="multiple"
             placeholder="Please select your preferred genres"
           >
-            <Option value="biography">Biography</Option>
+            <Option value="history">History</Option>
+            <Option value="adventure">Adventure</Option>
+            <Option value="romance">Romance</Option>
+            <Option value="horror">Horror</Option>
             <Option value="fiction">Fiction</Option>
-            <Option value="nonfiction">Nonfiction</Option>
-            <Option value="action">Action</Option>
+            <Option value="comedey">Comedy</Option>
           </Select>
         </Form.Item>
 
@@ -240,20 +228,6 @@ function Recommendations() {
           </Radio.Group>
         </Form.Item>
         }
-
-        {/* <Form.Item label="InputNumber">
-        <Form.Item name="input-number" noStyle>
-          <InputNumber min={1} max={10} />
-        </Form.Item>
-        <span
-          className="ant-form-text"
-          style={{
-            marginLeft: 8,
-          }}
-        >
-          machines
-        </span>
-      </Form.Item> */}
 
         <Form.Item
           wrapperCol={{
