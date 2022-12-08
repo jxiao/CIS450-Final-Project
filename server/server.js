@@ -586,37 +586,29 @@ app.get("/search", async (req, res) => {
       JOIN Movie_ratings R ON R.MovieId = Plays.Movie_id
       WHERE Name LIKE '%${search}%'
     ),
-    Book_genres AS (
-      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
-      FROM GenreOfBook
-      GROUP BY BookISBN
-    ),
-    Movie_genres AS (
-      SELECT Movie_id, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
-      FROM GenreOfMovie
-      GROUP BY Movie_id
-    ),
     BooksUnioned AS (
-       (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_books B)
-       UNION
-       (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_authors B)
+      (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_books B)
+      UNION
+      (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_authors B)
     ),
     Final_books AS (
-       SELECT *
-       FROM BooksUnioned B
-       JOIN Book_genres G ON G.BookISBN = B.Id
+      SELECT B.Id as Id, B.Title, B.Type, B.Rating, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
+      FROM BooksUnioned B
+      JOIN GenreOfBook G ON G.BookISBN = B.Id
+      GROUP BY B.Id, B.Title, B.Type, B.Rating
     ),
     UnionedMovies AS (
-       (SELECT * FROM Matched_movies)
-       UNION
-       (SELECT * FROM Matched_directors)
-       UNION
-       (SELECT * FROM Matched_actors)
+        (SELECT * FROM Matched_movies)
+        UNION
+        (SELECT * FROM Matched_directors)
+        UNION
+        (SELECT * FROM Matched_actors)
     ),
     Final_movies AS (
-      SELECT M.ID as Id, M.Title, M.Type, M.AverageRating AS Rating, G.GenreList
+      SELECT M.ID as Id, M.Title, M.Type, M.AverageRating AS Rating, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') as GenreList
       FROM UnionedMovies M
-      JOIN Movie_genres G ON M.ID = G.Movie_id
+      JOIN GenreOfMovie G ON M.ID = G.Movie_id
+      GROUP BY M.ID, M.Title, M.Type, M.AverageRating
     )
     (SELECT Id, Title, Type, Rating, GenreList
     FROM Final_books)
@@ -625,6 +617,7 @@ app.get("/search", async (req, res) => {
     FROM Final_movies);
   `;
   connection.query(query, (error, results) => {
+    console.log(error);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
