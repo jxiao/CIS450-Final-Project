@@ -23,9 +23,8 @@ app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
  */
 app.get("/books", async (req, res) => {
   const { genres, author, minRating, numResults } = req.query;
-  const existsFilter = genres || author || minRating;
   let query = `SELECT * FROM Books ${numResults ? `LIMIT ${numResults}` : ""}`;
-  if (existsFilter) {
+  if (genres || author || minRating) {
     const whereClauses = [];
     if (author) {
       whereClauses.push(`author LIKE '%${author}%'`);
@@ -33,19 +32,32 @@ app.get("/books", async (req, res) => {
     if (minRating) {
       whereClauses.push(`rating >= ${minRating}`);
     }
+    let genresFormatted = genres;
+    if (genres && genres.length > 0) {
+      genres = `(${genres.map((g) => `'${g}'`).join(",")})`;
+    }
     const whereString = whereClauses.join(" AND ");
     query = `
       WITH GenreSatisfyingBooks AS (
         SELECT BookISBN
         FROM GenreOfBook
-        WHERE GenreName IN ${genres}
+        ${
+          genres && genres.length > 0
+            ? `WHERE GenreName IN ${genresFormatted}`
+            : ""
+        }
         GROUP BY BookISBN
-        HAVING COUNT(*) = ${genres.length}
+        ${
+          genres && genres.length > 0
+            ? `HAVING COUNT(*) = ${genres.length}`
+            : ""
+        }
       )
       SELECT * 
       FROM Books b
       JOIN GenreSatisfyingBooks g ON b.ISBN = g.BookISBN
-      WHERE ${whereString}  
+      ${whereString ? `WHERE ${whereString}` : ""}
+      ORDER BY RAND() 
       ${numResults ? `LIMIT ${numResults}` : ""}
     `;
   }
@@ -187,9 +199,8 @@ app.get("/authors/:id", async (req, res) => {
 
 app.get("/movies", async (req, res) => {
   const { genres, director, minRating, numResults } = req.query;
-  const existsFilter = genres || director || minRating;
   let query = `SELECT * FROM Movies ${numResults ? `LIMIT ${numResults}` : ""}`;
-  if (existsFilter) {
+  if (genres || director || minRating) {
     const whereClauses = [];
     if (director) {
       whereClauses.push(`director LIKE '%${director}%'`);
@@ -197,21 +208,30 @@ app.get("/movies", async (req, res) => {
     if (minRating) {
       whereClauses.push(`rating >= ${minRating}`);
     }
+    let genresFormatted = genres;
+    if (genres) {
+      genres = `(${genres.map((g) => `'${g}'`).join(",")})`;
+    }
     const whereString = whereClauses.join(" AND ");
     query = `
-      WITH GenreSatisfyingMovies AS (
-        SELECT MovieID
-        FROM GenreOfMovie
-        WHERE GenreName IN ${genres}
-        GROUP BY MovieID
-        HAVING COUNT(*) = ${genres.length}
-      )
-      SELECT *
-      FROM Movies m
-      JOIN GenreSatisfyingMovies g ON m.ID = g.MovieID
-      WHERE ${whereString}
-      ${numResults ? `LIMIT ${numResults}` : ""}
-    `;
+    WITH GenreSatisfyingMovies AS (
+      SELECT MovieID
+      FROM GenreOfMovie
+      ${
+        genres && genres.length > 0
+          ? `WHERE GenreName IN ${genresFormatted}`
+          : ""
+      }
+      GROUP BY MovieID
+      ${genres && genres.length > 0 ? `HAVING COUNT(*) = ${genres.length}` : ""}
+    )
+    SELECT *
+    FROM Movies m
+    JOIN GenreSatisfyingMovies g ON m.ID = g.MovieID
+    ${whereString ? `WHERE ${whereString}` : ""}
+    ORDER BY RAND()
+    ${numResults ? `LIMIT ${numResults}` : ""}
+  `;
   }
   connection.query(query, (error, results) => {
     if (error) {
@@ -399,6 +419,7 @@ app.get("/directors", async (req, res) => {
 
 app.get("/directors/best", async (req, res) => {
   const { numRaters, numMovies } = req.query;
+  console.log("here in directors best");
   const query = `
     WITH MovieRatings AS (
       SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
@@ -443,9 +464,13 @@ app.get("/directors/best", async (req, res) => {
     JOIN Movies M ON M.movie_id = O.movie_id;
   `;
   connection.query(query, (error, results) => {
+    console.log("sedning query");
     if (error) {
+      console.log("here in error");
       res.status(400).json({ error: error });
     } else if (results) {
+      console.log("here in results");
+      console.log(results);
       res.status(200).json({ directors: results });
     }
   });
@@ -524,7 +549,7 @@ app.get("/search", async (req, res) => {
   const { search } = req.query;
   const query = `
     WITH Matched_books AS (
-      SELECT ISBN, Title, 'book' AS Type, rating
+      SELECT ISBN, Title, 'Book' AS Type, rating
       FROM Books
       WHERE Title LIKE '%${search}%'
     ),
@@ -534,19 +559,19 @@ app.get("/search", async (req, res) => {
       GROUP BY MovieId
     ),
     Matched_movies AS (
-      SELECT Title, Movie_id AS ID, 'movie' AS Type, AverageRating
+      SELECT Title, Movie_id AS ID, 'Movie' AS Type, AverageRating
       FROM Movies
       JOIN Movie_ratings R ON R.MovieId = Movies.Movie_id
       WHERE Title LIKE '%${search}%'
     ),
     Matched_authors AS (
-      SELECT BookISBN AS ISBN, B.Title AS Title, 'book' AS Type, B.rating
+      SELECT BookISBN AS ISBN, B.Title AS Title, 'Book' AS Type, B.rating
       FROM Writes W
       JOIN Books B ON W.BookISBN = B.ISBN
       WHERE AuthorName LIKE '%${search}%'
     ),
     Matched_directors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'movie' AS Type, AverageRating
+      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
       FROM Directs
       JOIN Directors ON Directs.DirectorId = Directors.Id
       JOIN Movies ON Directs.Movie_id = Movies.Movie_id
@@ -554,7 +579,7 @@ app.get("/search", async (req, res) => {
       WHERE Name LIKE '%${search}%'
     ),
     Matched_actors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'movie' AS Type, AverageRating
+      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
       FROM Plays
       JOIN Actors on Plays.ActorId = Actors.Id
       JOIN Movies ON Plays.Movie_id = Movies.Movie_id
@@ -562,12 +587,12 @@ app.get("/search", async (req, res) => {
       WHERE Name LIKE '%${search}%'
     ),
     Book_genres AS (
-      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName) AS GenreList
+      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
       FROM GenreOfBook
       GROUP BY BookISBN
     ),
     Movie_genres AS (
-      SELECT Movie_id, GROUP_CONCAT(GenreName ORDER BY GenreName) AS GenreList
+      SELECT Movie_id, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
       FROM GenreOfMovie
       GROUP BY Movie_id
     ),

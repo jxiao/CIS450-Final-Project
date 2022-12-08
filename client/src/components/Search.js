@@ -44,11 +44,11 @@ function Search() {
       width: "20%",
       filters: [
         {
-          text: "book",
+          text: "Book",
           value: "book",
         },
         {
-          text: "movie",
+          text: "Movie",
           value: "movie",
         },
       ],
