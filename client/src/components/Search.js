@@ -77,7 +77,7 @@ function Search() {
         placeholder="Type in a title, author, director, or actor, and press enter to search"
         onPressEnter={handleSearch}
       />
-      <Table
+      {data && <Table
         onRow={(record) => {
           return {
             onClick: () => {
@@ -87,7 +87,7 @@ function Search() {
         }}
         columns={columns}
         dataSource={data}
-      />
+      />}
       <Modal
         open={detailedViewItem !== null && detailedViewItem !== undefined}
         onOk={() => setDetailedViewItem(null)}
