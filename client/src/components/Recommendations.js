@@ -127,8 +127,8 @@ function Recommendations() {
   };
 
   const handleChangeMedia = (e) => {
+    console.log(!movieChecked)
     setMovieChecked(!movieChecked);
-    console.log("movie pressed");
   };
 
   return (
@@ -223,12 +223,12 @@ function Recommendations() {
           />
         </Form.Item>
 
-        <Form.Item
+        {movieChecked && <Form.Item
           name="minRaters"
           label="Minimum no. of raters for the movies"
           rules={[
             {
-              required: false,
+              required: true,
               message: "Please pick an item",
             },
           ]}
@@ -239,6 +239,7 @@ function Recommendations() {
             <Radio.Button value="2">2</Radio.Button>
           </Radio.Group>
         </Form.Item>
+        }
 
         {/* <Form.Item label="InputNumber">
         <Form.Item name="input-number" noStyle>
