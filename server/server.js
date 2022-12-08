@@ -420,49 +420,8 @@ app.get("/directors", async (req, res) => {
 app.get("/directors/best", async (req, res) => {
   const { numRaters, numMovies } = req.query;
   console.log("here in directors best");
-  const query = `
-    WITH MovieRatings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
-      FROM Ratings
-      GROUP BY MovieId
-      HAVING NumRaters >= ${numRaters}
-    ),
-    DirectorStats AS (
-      SELECT D.DirectorId, AVG(AverageRating) AS DirectorAvgRating
-      FROM Directs D
-      JOIN MovieRatings M ON D.Movie_id = M.MovieId
-      GROUP BY DirectorId
-      HAVING COUNT(*) >= ${numMovies}
-    ),
-    HighestDirectors AS (
-      SELECT DirectorId
-      FROM DirectorStats
-      WHERE DirectorAvgRating >= ALL (SELECT DirectorAvgRating FROM DirectorStats)
-    ),
-    DirectorBestRating AS (
-      SELECT H.DirectorId AS DirectorId, MAX(AverageRating) as max_rating
-      FROM HighestDirectors H
-      JOIN Directs D ON H.DirectorId = D.DirectorId
-      JOIN MovieRatings M ON D.movie_id = M.MovieId
-      GROUP BY DirectorId
-    ),
-    BestMovies AS (
-      SELECT D.DirectorId, Movie_id
-      FROM DirectorBestRating
-      JOIN Directs D ON DirectorBestRating.DirectorId = D.DirectorId
-      JOIN MovieRatings M ON D.movie_id = M.MovieId
-      WHERE M.AverageRating = DirectorBestRating.max_rating
-    ),
-      OneBestMoviePerDirector AS (
-      SELECT DirectorId, Movie_id
-      FROM (SELECT * FROM BestMovies B ORDER BY RAND()) A
-      GROUP BY DirectorId
-    )
-    SELECT DS.name, M.title
-    FROM OneBestMoviePerDirector O
-    JOIN Directors DS ON DS.Id = O.DirectorId
-    JOIN Movies M ON M.movie_id = O.movie_id;
-  `;
+  const query = "SELECT * FROM directors_best_materialized_view;";
+  console.log(query);
   connection.query(query, (error, results) => {
     console.log("sedning query");
     if (error) {
@@ -475,6 +434,52 @@ app.get("/directors/best", async (req, res) => {
     }
   });
 });
+
+/**
+ * CREATING MATERIALIZED VIEW FOR /directors/best
+ * 
+  CREATE TABLE directors_best_materialized_view AS
+  WITH MovieRatings AS (
+    SELECT MovieId, AVG(rating) as AverageRating
+    FROM Ratings
+    GROUP BY MovieId
+  ),
+  DirectorStats AS (
+    SELECT D.DirectorId, AVG(AverageRating) AS DirectorAvgRating
+    FROM Directs D
+    JOIN MovieRatings M ON D.Movie_id = M.MovieId
+    GROUP BY DirectorId
+  ),
+  HighestDirectors AS (
+    SELECT DirectorId
+    FROM DirectorStats
+    WHERE DirectorAvgRating >= ALL (SELECT DirectorAvgRating FROM DirectorStats)
+  ),
+  DirectorBestRating AS (
+    SELECT H.DirectorId AS DirectorId, MAX(AverageRating) as max_rating
+    FROM HighestDirectors H
+    JOIN Directs D ON H.DirectorId = D.DirectorId
+    JOIN MovieRatings M ON D.movie_id = M.MovieId
+    GROUP BY DirectorId
+  ),
+  BestMovies AS (
+    SELECT D.DirectorId, Movie_id
+    FROM DirectorBestRating
+    JOIN Directs D ON DirectorBestRating.DirectorId = D.DirectorId
+    JOIN MovieRatings M ON D.movie_id = M.MovieId
+    WHERE M.AverageRating = DirectorBestRating.max_rating
+  ),
+    OneBestMoviePerDirector AS (
+    SELECT DirectorId, Movie_id
+    FROM (SELECT * FROM BestMovies B ORDER BY RAND()) A
+    GROUP BY DirectorId
+  )
+  (SELECT DS.name, M.title, M.movie_id
+  FROM OneBestMoviePerDirector O
+  JOIN Directors DS ON DS.Id = O.DirectorId
+  JOIN Movies M ON M.movie_id = O.movie_id);
+ * 
+ */
 
 app.get("/director/:id", async (req, res) => {
   const { id } = req.params;
