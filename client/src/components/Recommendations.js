@@ -71,6 +71,7 @@ const columns = [
 function Recommendations() {
   const [data, setData] = useState(null);
   const [detailedViewItem, setDetailedViewItem] = useState(null);
+  const [movieChecked, setMovieChecked] = useState(false);
   const onFinish = (values) => {
     console.log("Received values of form: ", values);
     let genresReformatted = `('${values.genres.join("','")}')`;
@@ -83,7 +84,11 @@ function Recommendations() {
       });
       console.log("ran both query");
       console.log(results.data.results);
-      setData(results.data.results);
+      const newArr = results.data.results.map((item, i) => ({
+        ...item,
+        key: i,
+      }));
+      setData(newArr);
     };
     const fetchBooks = async () => {
       const results = await getBookRecommendations({
@@ -92,7 +97,11 @@ function Recommendations() {
       });
       console.log("ran book query");
       console.log(results.data.results);
-      setData(results.data.results);
+      const newArr = results.data.results.map((item, i) => ({
+        ...item,
+        key: i,
+      }));
+      setData(newArr);
     };
     const fetchMovies = async () => {
       const results = await getMovieRecommendations({
@@ -102,7 +111,11 @@ function Recommendations() {
       });
       console.log("ran movie query");
       console.log(results.data.results);
-      setData(results.data.results);
+      const newArr = results.data.results.map((item, i) => ({
+        ...item,
+        key: i,
+      }));
+      setData(newArr);
     };
     if (values.media.length === 2) {
       fetchAllResults();
@@ -111,6 +124,11 @@ function Recommendations() {
     } else {
       fetchMovies();
     }
+  };
+
+  const handleChangeMedia = (e) => {
+    setMovieChecked(!movieChecked);
+    console.log("movie pressed");
   };
 
   return (
@@ -150,6 +168,7 @@ function Recommendations() {
             </Col>
             <Col span={14}>
               <Checkbox
+                onChange={handleChangeMedia}
                 value="Movies"
                 style={{
                   lineHeight: "32px",
