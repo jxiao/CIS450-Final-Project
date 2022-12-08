@@ -45,11 +45,11 @@ function Search() {
       filters: [
         {
           text: "Book",
-          value: "book",
+          value: "Book",
         },
         {
           text: "Movie",
-          value: "movie",
+          value: "Movie",
         },
       ],
       onFilter: (value, record) => record.Type.includes(value),
@@ -97,7 +97,7 @@ function Search() {
       >
         <DetailedView
           id={detailedViewItem && detailedViewItem.Id}
-          isBook={detailedViewItem && detailedViewItem.Type === "book"}
+          isBook={detailedViewItem && detailedViewItem.Type === "Book"}
         />
       </Modal>
     </div>
