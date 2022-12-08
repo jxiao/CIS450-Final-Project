@@ -525,7 +525,7 @@ app.get("/search", async (req, res) => {
   const { search } = req.query;
   const query = `
     WITH Matched_books AS (
-      SELECT ISBN, Title, 'book' AS Type, rating
+      SELECT ISBN, Title, 'Book' AS Type, rating
       FROM Books
       WHERE Title LIKE '%${search}%'
     ),
@@ -535,19 +535,19 @@ app.get("/search", async (req, res) => {
       GROUP BY MovieId
     ),
     Matched_movies AS (
-      SELECT Title, Movie_id AS ID, 'movie' AS Type, AverageRating
+      SELECT Title, Movie_id AS ID, 'Movie' AS Type, AverageRating
       FROM Movies
       JOIN Movie_ratings R ON R.MovieId = Movies.Movie_id
       WHERE Title LIKE '%${search}%'
     ),
     Matched_authors AS (
-      SELECT BookISBN AS ISBN, B.Title AS Title, 'book' AS Type, B.rating
+      SELECT BookISBN AS ISBN, B.Title AS Title, 'Book' AS Type, B.rating
       FROM Writes W
       JOIN Books B ON W.BookISBN = B.ISBN
       WHERE AuthorName LIKE '%${search}%'
     ),
     Matched_directors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'movie' AS Type, AverageRating
+      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
       FROM Directs
       JOIN Directors ON Directs.DirectorId = Directors.Id
       JOIN Movies ON Directs.Movie_id = Movies.Movie_id
@@ -555,7 +555,7 @@ app.get("/search", async (req, res) => {
       WHERE Name LIKE '%${search}%'
     ),
     Matched_actors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'movie' AS Type, AverageRating
+      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
       FROM Plays
       JOIN Actors on Plays.ActorId = Actors.Id
       JOIN Movies ON Plays.Movie_id = Movies.Movie_id
@@ -563,12 +563,12 @@ app.get("/search", async (req, res) => {
       WHERE Name LIKE '%${search}%'
     ),
     Book_genres AS (
-      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName) AS GenreList
+      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
       FROM GenreOfBook
       GROUP BY BookISBN
     ),
     Movie_genres AS (
-      SELECT Movie_id, GROUP_CONCAT(GenreName ORDER BY GenreName) AS GenreList
+      SELECT Movie_id, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
       FROM GenreOfMovie
       GROUP BY Movie_id
     ),
