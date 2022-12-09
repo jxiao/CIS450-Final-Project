@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Input, Table, Modal } from "antd";
+import { Input, Table, Modal, Typography } from "antd";
 import { Navbar, DetailedView } from "./index.js";
 import { getSearch } from "../modules/api";
 
@@ -8,7 +8,7 @@ function Search() {
   const [data, setData] = useState(null);
   const [detailedViewItem, setDetailedViewItem] = useState(null);
   const handleSearch = (e) => {
-    setSearchText(e.target.value);
+    setSearchText(e);
   };
 
   useEffect(() => {
@@ -36,12 +36,13 @@ function Search() {
       dataIndex: "Title",
       key: "Title",
       width: "30%",
+      render: (text) => <a>{text}</a>,
     },
     {
       title: "Type",
       dataIndex: "Type",
       key: "Type",
-      width: "20%",
+      width: "10%",
       filters: [
         {
           text: "Book",
@@ -59,7 +60,7 @@ function Search() {
       title: "Rating",
       dataIndex: "rating",
       key: "rating",
-      width: "20%",
+      width: "10%",
       sorter: (a, b) => a.rating - b.rating,
       sortDirections: ["descend", "ascend"],
     },
@@ -73,10 +74,16 @@ function Search() {
   return (
     <div>
       <Navbar />
-      <Input
-        placeholder="Type in a title, author, director, or actor, and press enter to search"
-        onPressEnter={handleSearch}
+      <div style={{ marginTop: 100, marginLeft: 400, marginRight: 200, width: 600}}>
+      <Typography.Title style={{ marginLeft:50}}>Search for Books and Movies!</Typography.Title>
+      <Input.Search
+      size = "large"
+      placeholder="Type in a title, author, director, or actor, and press the button to search"
+      onSearch={handleSearch}
+      enterButton
       />
+      </div>
+      <div style={{ marginTop: 50, marginLeft: 50, marginRight: 50}}>
       {data && <Table
         onRow={(record) => {
           return {
@@ -88,6 +95,7 @@ function Search() {
         columns={columns}
         dataSource={data}
       />}
+      </div>
       <Modal
         open={detailedViewItem !== null && detailedViewItem !== undefined}
         onOk={() => setDetailedViewItem(null)}
@@ -100,7 +108,7 @@ function Search() {
           isBook={detailedViewItem && detailedViewItem.Type === "book"}
         />
       </Modal>
-    </div>
+      </div>
   );
 }
 
