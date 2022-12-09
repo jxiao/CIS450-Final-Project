@@ -93,7 +93,6 @@ function DetailedView({ id, isBook }) {
         const { status, data } = await (isBook
           ? getBookById(id)
           : getMovieById(id));
-        console.log("fetched data in detailed view", status, id, isBook, data);
         if (status === 200) {
           setData(translate(data, isBook));
         }

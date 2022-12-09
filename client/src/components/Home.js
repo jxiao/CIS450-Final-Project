@@ -79,7 +79,6 @@ function Home() {
         numRaters: 1,
         numMovies: 1,
       });
-      console.log(data);
       setBestData(data.directors);
     }
     async function fetchBooksAndMovies() {
@@ -91,7 +90,6 @@ function Home() {
       const { data: movieData } = await getMovies({
         numResults: MULTIPLIER * NUM_ITEMS,
       });
-      console.log(bookData, movieData);
       setCarouselData(
         interleaveArrays(
           bookData.books
@@ -151,7 +149,6 @@ function Home() {
         renderItem={(item) => (
           <List.Item
             onClick={() => {
-              console.log(item);
               setDetailedViewItem(item);
             }}
           >
