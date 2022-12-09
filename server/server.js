@@ -121,7 +121,7 @@ app.get("/book/:id/similar", async (req, res) => {
           WITH GenreSatisfyingBooks AS (
             SELECT BookISBN, COUNT(*) AS numSimilar
             FROM GenreOfBook
-            WHERE GenreName IN ${genres}
+            WHERE GenreName IN ${genres === "()" ? "('')" : genres}
             GROUP BY BookISBN
             ORDER BY numSimilar DESC
           ),
@@ -160,7 +160,6 @@ app.get("/book/:id/similar", async (req, res) => {
 
 app.get("/authors", async (req, res) => {
   const { name, gender } = req.query;
-  // TODO: is gender a string or an int here?  Do we need to parse it?
   const query = `
     SELECT *
     FROM Authors
@@ -625,7 +624,8 @@ app.get("/search", async (req, res) => {
 });
 
 app.get("/bookrecommendation", async (req, res) => {
-  const { genres, minRating } = req.query;
+  const { genres, minRating: minRatingString } = req.query;
+  const minRating = parseInt(minRatingString);
   const query = `
     WITH books_genres AS (
       SELECT BookISBN, COUNT(*) AS GenresMatched
@@ -650,31 +650,34 @@ app.get("/bookrecommendation", async (req, res) => {
 });
 
 app.get("/movierecommendation", async (req, res) => {
-  const { genres, minRating, minNumRaters } = req.query;
+  const {
+    genres,
+    minRating: minRatingString,
+    minNumRaters: minNumRatersString,
+  } = req.query;
+  const { minRating, minNumRaters } = {
+    minRating: parseInt(minRatingString),
+    minNumRaters: parseInt(minNumRatersString),
+  };
   const query = `
-    WITH movies_genres AS (
+    SELECT Title, A.Movie_id AS Id, 'movie' as Type
+    FROM Movies A
+    ${minNumRaters === 0 ? "LEFT" : ""} JOIN (SELECT MovieId
+        FROM Ratings
+        GROUP BY MovieId
+        HAVING AVG(rating) >= ${minRating} ${
+    minNumRaters > 1 ? `AND COUNT(DISTINCT UserId) >= ${minNumRaters}` : ""
+  }) R ON A.Movie_id = R.MovieId
+    JOIN (
       SELECT Movie_id, COUNT(*) AS GenresMatched
       FROM GenreOfMovie
       WHERE GenreName IN ${genres}
       GROUP BY Movie_id
       ORDER BY GenresMatched DESC
-    ),
-    Movie_ratings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
-      FROM Ratings
-      GROUP BY MovieId
-      HAVING AverageRating >= ${minRating} AND NumRaters >= ${minNumRaters}
-    ),
-    Five_movies AS (
-      SELECT Title, A.Movie_id AS Id, 'movie' as Type
-      FROM Movies A
-      JOIN (SELECT MovieId FROM Movie_ratings) R ON A.Movie_id = R.MovieId
-      JOIN movies_genres G ON A.Movie_id = G.Movie_id
-      LIMIT 5
-    )
-    (SELECT Title, Id, Type
-    FROM Five_movies)
+      ) G ON A.Movie_id = G.Movie_id
+    LIMIT 10
   `;
+  console.log(typeof minNumRaters, typeof minRating);
   connection.query(query, (error, results) => {
     if (error) {
       res.status(400).json({ error: error });
@@ -685,48 +688,56 @@ app.get("/movierecommendation", async (req, res) => {
 });
 
 app.get("/allrecommendations", async (req, res) => {
-  const { genres, minRating, minNumRaters } = req.query;
+  const {
+    genres,
+    minRating: minRatingString,
+    minNumRaters: minNumRatersString,
+  } = req.query;
+  const { minRating, minNumRaters } = {
+    minRating: parseInt(minRatingString),
+    minNumRaters: parseInt(minNumRatersString),
+  };
   const query = `
-    WITH books_genres AS (
-      SELECT BookISBN, COUNT(*) AS GenresMatched
-      FROM GenreOfBook
-      WHERE GenreName IN ${genres}
-      GROUP BY BookISBN
-      ORDER BY GenresMatched DESC
-    ),
-    movies_genres AS (
-      SELECT Movie_id, COUNT(*) AS GenresMatched
-      FROM GenreOfMovie
-      WHERE GenreName IN ${genres}
-      GROUP BY Movie_id
-      ORDER BY GenresMatched DESC
-    ),
-    Movie_ratings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
-      FROM Ratings
-      GROUP BY MovieId
-      HAVING AverageRating >= ${minRating} AND NumRaters >= ${minNumRaters}
-    ),
-    Five_books AS (
+    WITH Five_books AS (
       SELECT Title, ISBN AS Id, 'book' as Type
       FROM Books A
-      JOIN (SELECT BookISBN FROM books_genres) B ON A.ISBN = B.BookISBN
+      JOIN (SELECT BookISBN
+            FROM (SELECT BookISBN, COUNT(*) AS GenresMatched
+            FROM GenreOfBook
+            WHERE GenreName IN ${genres}
+            GROUP BY BookISBN
+            ORDER BY GenresMatched DESC) C) B ON A.ISBN = B.BookISBN
       WHERE Rating >= ${minRating}
       LIMIT 5
     ),
     Five_movies AS (
       SELECT Title, A.Movie_id AS Id, 'movie' as Type
       FROM Movies A
-      JOIN (SELECT MovieId FROM Movie_ratings) R ON A.Movie_id = R.MovieId
-      JOIN movies_genres G ON A.Movie_id = G.Movie_id
+      ${minNumRaters === 0 ? "LEFT" : ""} JOIN (SELECT MovieId
+            FROM (
+                SELECT MovieId
+                FROM Ratings
+                GROUP BY MovieId
+                HAVING AVG(rating) >= ${minRating} ${
+    minNumRaters > 1 ? `AND COUNT(DISTINCT UserId) >= ${minNumRaters}` : ""
+  }
+                ) B
+            ) R ON A.Movie_id = R.MovieId
+      JOIN (SELECT Movie_id, COUNT(*) AS GenresMatched
+            FROM GenreOfMovie
+            WHERE GenreName IN ${genres}
+            GROUP BY Movie_id
+            ORDER BY GenresMatched DESC
+          ) G ON A.Movie_id = G.Movie_id
       LIMIT 5
     )
     (SELECT Title, Id, Type
     FROM Five_books)
     UNION
     (SELECT Title, Id, Type
-    FROM Five_movies)
+    FROM Five_movies);
   `;
+  console.log(minNumRaters, typeof minNumRaters, query);
   connection.query(query, (error, results) => {
     if (error) {
       res.status(400).json({ error: error });
