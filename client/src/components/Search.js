@@ -72,9 +72,9 @@ function Search() {
   ];
 
   return (
-    <div>
+    <div style={{justifyContent: "center"}}>
       <Navbar />
-      <div style={{ marginTop: 100, marginLeft: 400, marginRight: 200, width: 600}}>
+      <div style={{ display:"flex", flexDirection:"column", justifyContent: "space-between", marginLeft:"auto", marginRight: "auto", width: 600}}>
       <Typography.Title style={{ marginLeft:50}}>Search for Books and Movies!</Typography.Title>
       <Input.Search
       size = "large"
