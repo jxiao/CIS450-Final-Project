@@ -553,37 +553,37 @@ app.get("/search", async (req, res) => {
       WHERE Title LIKE '%${search}%'
     ),
     Movie_ratings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
+      SELECT MovieId, AVG(rating) as AverageRating
       FROM Ratings
       GROUP BY MovieId
     ),
     Matched_movies AS (
       SELECT Title, Movie_id AS ID, 'Movie' AS Type, AverageRating
-      FROM Movies
-      JOIN Movie_ratings R ON R.MovieId = Movies.Movie_id
+      FROM (SELECT Title, Movie_id FROM Movies) M
+      JOIN Movie_ratings R ON R.MovieId = M.Movie_id
       WHERE Title LIKE '%${search}%'
     ),
     Matched_authors AS (
       SELECT BookISBN AS ISBN, B.Title AS Title, 'Book' AS Type, B.rating
       FROM Writes W
-      JOIN Books B ON W.BookISBN = B.ISBN
-      WHERE AuthorName LIKE '%${search}%'
+      JOIN (SELECT ISBN, Title, rating FROM Books) B ON W.BookISBN = B.ISBN
+      WHERE W.AuthorName LIKE '%${search}%'
     ),
     Matched_directors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
-      FROM Directs
-      JOIN Directors ON Directs.DirectorId = Directors.Id
-      JOIN Movies ON Directs.Movie_id = Movies.Movie_id
-      JOIN Movie_ratings R ON R.MovieId = Directs.Movie_id
-      WHERE Name LIKE '%${search}%'
+      SELECT M.Title, M.Movie_id AS ID, 'Movie' AS Type, R.AverageRating
+      FROM Directs D
+      JOIN (SELECT Id, Name FROM Directors) S ON D.DirectorId = S.Id
+      JOIN (SELECT Title, Movie_id FROM Movies) M ON D.Movie_id = M.Movie_id
+      JOIN Movie_ratings R ON R.MovieId = D.Movie_id
+      WHERE S.Name LIKE '%${search}%'
     ),
     Matched_actors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
-      FROM Plays
-      JOIN Actors on Plays.ActorId = Actors.Id
-      JOIN Movies ON Plays.Movie_id = Movies.Movie_id
-      JOIN Movie_ratings R ON R.MovieId = Plays.Movie_id
-      WHERE Name LIKE '%${search}%'
+      SELECT M.Title, M.Movie_id AS ID, 'Movie' AS Type, AverageRating
+      FROM (SELECT ActorId, Movie_id FROM Plays) P
+      JOIN (SELECT Id, Name FROM Actors) A on P.ActorId = A.Id
+      JOIN (SELECT Movie_id, Title FROM Movies) M ON P.Movie_id = M.Movie_id
+      JOIN Movie_ratings R ON R.MovieId = P.Movie_id
+      WHERE A.Name LIKE '%${search}%'
     ),
     BooksUnioned AS (
       (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_books B)
