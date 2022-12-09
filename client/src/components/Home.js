@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { List, Card } from "antd";
+import { List, Card, Modal } from "antd";
 import Carousel from "react-multi-carousel";
 import { bestDirector, getBooks, getMovies } from "../modules/api";
-import { Navbar } from "./index.js";
+import { Navbar, DetailedView } from "./index.js";
 import { translate as translateData } from "../modules/utility.js";
 
 const styles = {
@@ -64,6 +64,7 @@ const responsive = {
 function Home() {
   const [bestData, setBestData] = useState([]);
   const [carouselData, setCarouselData] = useState([]);
+  const [detailedViewItem, setDetailedViewItem] = useState(null);
   useEffect(() => {
     function interleaveArrays(arr1, arr2) {
       const result = [];
@@ -83,11 +84,12 @@ function Home() {
     }
     async function fetchBooksAndMovies() {
       const NUM_ITEMS = 10;
+      const MULTIPLIER = 5;
       const { data: bookData } = await getBooks({
-        numResults: 2 * NUM_ITEMS,
+        numResults: MULTIPLIER * NUM_ITEMS,
       });
       const { data: movieData } = await getMovies({
-        numResults: 2 * NUM_ITEMS,
+        numResults: MULTIPLIER * NUM_ITEMS,
       });
       console.log(bookData, movieData);
       setCarouselData(
@@ -147,7 +149,12 @@ function Home() {
         itemLayout="horizontal"
         dataSource={bestData}
         renderItem={(item) => (
-          <List.Item>
+          <List.Item
+            onClick={() => {
+              console.log(item);
+              setDetailedViewItem(item);
+            }}
+          >
             <List.Item.Meta
               style={styles.listItem}
               // avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
@@ -157,6 +164,18 @@ function Home() {
           </List.Item>
         )}
       />
+      <Modal
+        open={detailedViewItem !== null && detailedViewItem !== undefined}
+        onOk={() => setDetailedViewItem(null)}
+        onCancel={() => setDetailedViewItem(null)}
+        footer={null}
+        width={1000}
+      >
+        <DetailedView
+          id={detailedViewItem && detailedViewItem.movie_id}
+          isBook={false}
+        />
+      </Modal>
     </div>
   );
 }

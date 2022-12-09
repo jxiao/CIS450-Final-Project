@@ -245,15 +245,15 @@ app.get("/movies", async (req, res) => {
 app.get("/movie/:id", async (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT Movies.Movie_id as movieId, Movies.Title, Movies.Overview, AVG(Rating) as Rating, GROUP_CONCAT(DISTINCT GenreName) as genre, GROUP_CONCAT(DISTINCT Directors.Name) as directors, GROUP_CONCAT(DISTINCT Actors.Name) as actors
-    FROM Movies
-    JOIN Directs ON Movies.Movie_id = Directs.Movie_id
-    JOIN Directors ON Directors.Id = Directs.DirectorId
-    JOIN Plays ON Movies.Movie_id = Plays.Movie_id
-    JOIN Actors ON Actors.Id = Plays.ActorId
-    JOIN GenreOfMovie ON Movies.Movie_id = GenreOfMovie.Movie_id
-    JOIN Ratings ON Ratings.MovieId = Movies.Movie_id
-    WHERE Movies.Movie_id = ${id};
+  SELECT Movies.Movie_id as movieId, Movies.Title, Movies.Overview, AVG(Rating) as Rating, GROUP_CONCAT(DISTINCT GenreName) as genre, GROUP_CONCAT(DISTINCT Directors.Name) as directors, GROUP_CONCAT(DISTINCT Actors.Name) as actors
+  FROM Movies
+  LEFT JOIN Directs ON Movies.Movie_id = Directs.Movie_id
+  LEFT JOIN Directors ON Directors.Id = Directs.DirectorId
+  LEFT JOIN Plays ON Movies.Movie_id = Plays.Movie_id
+  LEFT JOIN Actors ON Actors.Id = Plays.ActorId
+  LEFT JOIN GenreOfMovie ON Movies.Movie_id = GenreOfMovie.Movie_id
+  LEFT JOIN Ratings ON Ratings.MovieId = Movies.Movie_id
+  WHERE Movies.Movie_id = ${id};
   `;
   connection.query(query, (error, results) => {
     if (error) {
@@ -279,9 +279,9 @@ app.get("/movie/:id/similar", async (req, res) => {
     if (error) {
       res.status(400).json({ error: error });
     } else {
-      const directors = `(${results
-        .map((result) => `'${result.DirectorId}'`)
-        .join(",")})`;
+      const directors = results
+        ? `(${results.map((result) => `'${result.DirectorId}'`).join(",")})`
+        : "";
       const actorsQuery = `
         SELECT ActorId
         FROM Plays
@@ -291,22 +291,22 @@ app.get("/movie/:id/similar", async (req, res) => {
         if (error) {
           res.status(400).json({ error: error });
         } else {
-          const actors = `(${results
-            .map((result) => `'${result.ActorId}'`)
-            .join(",")})`;
+          const actors = results
+            ? `(${results.map((result) => `'${result.ActorId}'`).join(",")})`
+            : "";
           const query = `
             WITH Director_movies AS (
               SELECT Movie_id, COUNT(*) AS numSimilar
               FROM Directs
               WHERE DirectorId IN ${directors}
-              GROUP BY DirectorId
+              GROUP BY Movie_id
               ORDER BY numSimilar DESC
             ),
             Actor_movies AS (
               SELECT Movie_id, COUNT(*) AS numSimilar
               FROM Plays
-              WHERE ActorId IN ${actors}
-              GROUP BY ActorId
+              WHERE ActorId IN ${actors === "()" ? "('')" : actors}
+              GROUP BY Movie_id
               ORDER BY numSimilar DESC
             ),
             Unioned AS (
@@ -318,7 +318,7 @@ app.get("/movie/:id/similar", async (req, res) => {
             FROM Unioned U
             JOIN Movies ON Movies.Movie_id = U.Movie_id
             GROUP BY U.Movie_id, Movies.Title, Type
-            HAVING Movies.Movie_id != ${id}
+            HAVING U.Movie_id != ${id}
             ORDER BY numSimilar DESC
             LIMIT ${numResults || 10};
           `;
@@ -419,17 +419,11 @@ app.get("/directors", async (req, res) => {
 
 app.get("/directors/best", async (req, res) => {
   const { numRaters, numMovies } = req.query;
-  console.log("here in directors best");
   const query = "SELECT * FROM directors_best_materialized_view;";
-  console.log(query);
   connection.query(query, (error, results) => {
-    console.log("sedning query");
     if (error) {
-      console.log("here in error");
       res.status(400).json({ error: error });
     } else if (results) {
-      console.log("here in results");
-      console.log(results);
       res.status(200).json({ directors: results });
     }
   });
@@ -622,7 +616,6 @@ app.get("/search", async (req, res) => {
     FROM Final_movies);
   `;
   connection.query(query, (error, results) => {
-    console.log(error);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
@@ -648,7 +641,6 @@ app.get("/bookrecommendation", async (req, res) => {
       LIMIT 10
   `;
   connection.query(query, (error, results) => {
-    console.log(error, results);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
@@ -659,7 +651,6 @@ app.get("/bookrecommendation", async (req, res) => {
 
 app.get("/movierecommendation", async (req, res) => {
   const { genres, minRating, minNumRaters } = req.query;
-  console.log("movie rec", req.query);
   const query = `
     WITH movies_genres AS (
       SELECT Movie_id, COUNT(*) AS GenresMatched
@@ -695,8 +686,6 @@ app.get("/movierecommendation", async (req, res) => {
 
 app.get("/allrecommendations", async (req, res) => {
   const { genres, minRating, minNumRaters } = req.query;
-  // console.log(genres);
-  console.log("all recs", req.query);
   const query = `
     WITH books_genres AS (
       SELECT BookISBN, COUNT(*) AS GenresMatched
@@ -739,7 +728,6 @@ app.get("/allrecommendations", async (req, res) => {
     FROM Five_movies)
   `;
   connection.query(query, (error, results) => {
-    console.log(error);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
