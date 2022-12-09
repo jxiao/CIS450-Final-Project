@@ -45,11 +45,11 @@ function Search() {
       filters: [
         {
           text: "Book",
-          value: "book",
+          value: "Book",
         },
         {
           text: "Movie",
-          value: "movie",
+          value: "Movie",
         },
       ],
       onFilter: (value, record) => record.Type.includes(value),
