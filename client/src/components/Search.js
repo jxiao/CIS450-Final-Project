@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Input, Table, Modal, Typography } from "antd";
+import { Input, Table, Modal, Typography, Spin } from "antd";
 import { Navbar, DetailedView } from "./index.js";
 import { getSearch } from "../modules/api";
 
@@ -7,22 +7,33 @@ function Search() {
   const [searchText, setSearchText] = useState("");
   const [data, setData] = useState(null);
   const [detailedViewItem, setDetailedViewItem] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const handleSearch = (e) => {
     setSearchText(e);
+    setLoading(true);
   };
 
   useEffect(() => {
     const fetchResults = async () => {
-      const results = await getSearch({
-        search: searchText,
-      });
-      console.log("ran search");
-      const newArr = results.data.results.map((item, i) => ({
-        ...item,
-        key: i,
-      }));
-      setData(newArr);
-      console.log(newArr);
+      try {
+        const { status, data } = await getSearch({
+          search: searchText,
+        });
+        if (status === 200) {
+          console.log("ran search");
+          console.log(data);
+          const newArr = data.results.map((item, i) => ({
+            ...item,
+            key: i,
+          }));
+          setData(newArr);
+          console.log("newnArr" + newArr);
+          setLoading(false);
+        } 
+      } catch (error) {
+        setLoading(false);
+      }
     };
     if (searchText !== "") {
       console.log("running");
@@ -46,11 +57,11 @@ function Search() {
       filters: [
         {
           text: "Book",
-          value: "book",
+          value: "Book",
         },
         {
           text: "Movie",
-          value: "movie",
+          value: "Movie",
         },
       ],
       onFilter: (value, record) => record.Type.includes(value),
@@ -75,16 +86,19 @@ function Search() {
     <div style={{justifyContent: "center"}}>
       <Navbar />
       <div style={{ display:"flex", flexDirection:"column", justifyContent: "space-between", marginLeft:"auto", marginRight: "auto", width: 600}}>
-      <Typography.Title style={{ marginLeft:50}}>Search for Books and Movies!</Typography.Title>
-      <Input.Search
-      size = "large"
-      placeholder="Type in a title, author, director, or actor, and press the button to search"
-      onSearch={handleSearch}
-      enterButton
-      />
+        <Typography.Title style={{ marginLeft:50}}>Search for Books and Movies!</Typography.Title>
+        <Input.Search
+        size = "large"
+        placeholder="Type in a title, author, director, or actor, and press the button to search"
+        onSearch={handleSearch}
+        enterButton
+        />
       </div>
+      {loading && <Spin style={{marginTop: 50}} tip="Loading" size="large">
+        <div className="content" />
+      </Spin>}
       <div style={{ marginTop: 50, marginLeft: 50, marginRight: 50}}>
-      {data && <Table
+      {data && !loading && <Table
         onRow={(record) => {
           return {
             onClick: () => {
@@ -105,7 +119,7 @@ function Search() {
       >
         <DetailedView
           id={detailedViewItem && detailedViewItem.Id}
-          isBook={detailedViewItem && detailedViewItem.Type === "book"}
+          isBook={detailedViewItem && detailedViewItem.Type === "Book"}
         />
       </Modal>
       </div>
