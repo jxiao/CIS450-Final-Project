@@ -113,7 +113,7 @@ function Recommendations() {
   };
 
   const handleChangeMedia = (e) => {
-    console.log(!movieChecked)
+    console.log(!movieChecked);
     setMovieChecked(!movieChecked);
   };
 
@@ -129,7 +129,7 @@ function Recommendations() {
           "input-number": 2,
           "checkbox-group": ["Books", "Movies"],
           rating: 0,
-          minRaters: "0",
+          minRaters: 0,
         }}
       >
         <Form.Item
@@ -211,23 +211,24 @@ function Recommendations() {
           />
         </Form.Item>
 
-        {movieChecked && <Form.Item
-          name="minRaters"
-          label="Minimum no. of raters for the movies"
-          rules={[
-            {
-              required: true,
-              message: "Please pick an item",
-            },
-          ]}
-        >
-          <Radio.Group>
-            <Radio.Button value="0">0</Radio.Button>
-            <Radio.Button value="1">1</Radio.Button>
-            <Radio.Button value="2">2</Radio.Button>
-          </Radio.Group>
-        </Form.Item>
-        }
+        {movieChecked && (
+          <Form.Item
+            name="minRaters"
+            label="Minimum no. of raters for the movies"
+            rules={[
+              {
+                required: true,
+                message: "Please pick an item",
+              },
+            ]}
+          >
+            <Radio.Group>
+              <Radio.Button value={0}>0</Radio.Button>
+              <Radio.Button value={1}>1</Radio.Button>
+              <Radio.Button value={2}>2</Radio.Button>
+            </Radio.Group>
+          </Form.Item>
+        )}
 
         <Form.Item
           wrapperCol={{
@@ -261,7 +262,9 @@ function Recommendations() {
       >
         <DetailedView
           id={detailedViewItem && detailedViewItem.Id}
-          isBook={detailedViewItem && detailedViewItem.Type === "book"}
+          isBook={
+            detailedViewItem && detailedViewItem.Type.toLowerCase() === "book"
+          }
         />
       </Modal>
     </div>
