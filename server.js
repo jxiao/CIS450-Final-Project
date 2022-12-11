@@ -1,22 +1,30 @@
 const express = require("express");
 const mysql = require("mysql");
 var cors = require("cors");
+const dotenv = require("dotenv");
 
-const config = require("./configuration.json");
+dotenv.config();
 
 const app = express();
+const path = require("path");
+app.use(express.static(path.join(__dirname, "./client/build")));
 
 const connection = mysql.createConnection({
-  host: config.rds_host,
-  user: config.rds_user,
-  password: config.rds_password,
-  port: config.rds_port,
-  database: config.rds_db,
+  host: process.env.RDS_HOST,
+  user: process.env.RDS_USER,
+  password: process.env.RDS_PASSWORD,
+  port: process.env.RDS_PORT,
+  database: process.env.RDS_DB,
 });
 connection.connect();
 
-// whitelist localhost 3000
-app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
+app.use(cors({ credentials: true, origin: ["http://localhost:3000", "*"] }));
+app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 /**
  * BOOK ROUTES
@@ -747,10 +755,14 @@ app.get("/allrecommendations", async (req, res) => {
   });
 });
 
-app.listen(config.server_port, () => {
-  console.log(
-    `Server running at http://${config.server_host}:${config.server_port}/`
-  );
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "./client/build/index.html"));
+});
+
+const PORT = process.env.PORT || 8080;
+// const HOST = process.env.SERVER_HOST || "127.0.0.1";
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;

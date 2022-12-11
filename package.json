@@ -1,5 +1,21 @@
 {
   "scripts": {
-    "install-all": "cd client && npm install --force && cd ../server && npm install"
+    "install-all": "npm install && cd client && npm install --force",
+    "build": "npm run install-all && cd client && npm run build",
+    "test": "jest --coverage",
+    "start": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.17.1",
+    "mysql": "^2.18.1",
+    "node-fetch": "^3.0.0",
+    "nodemon": "^2.0.12",
+    "path": "^0.12.7",
+    "supertest": "^6.1.6"
+  },
+  "devDependencies": {
+    "jest": "^27.1.0"
   }
 }
