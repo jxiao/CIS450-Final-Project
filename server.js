@@ -7,7 +7,7 @@ dotenv.config();
 
 const app = express();
 const path = require("path");
-app.use(express.static(path.join(__dirname, "../client/build")));
+app.use(express.static(path.join(__dirname, "./client/build")));
 
 const connection = mysql.createConnection({
   host: process.env.RDS_HOST,
@@ -18,8 +18,7 @@ const connection = mysql.createConnection({
 });
 connection.connect();
 
-// whitelist localhost 3000
-app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
+app.use(cors({ credentials: true, origin: ["http://localhost:3000", "*"] }));
 app.use(express.json());
 app.use(
   express.urlencoded({
@@ -757,12 +756,13 @@ app.get("/allrecommendations", async (req, res) => {
 });
 
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "../client/build/index.html"));
+  res.sendFile(path.join(__dirname, "./client/build/index.html"));
 });
 
-const PORT = process.env.SERVER_PORT || 5000;
+const PORT = process.env.SERVER_PORT || 8080;
+const HOST = process.env.SERVER_HOST || "127.0.0.1";
 app.listen(PORT, () => {
-  console.log(`Server running at http://${process.env.SERVER_HOST}:${PORT}/`);
+  console.log(`Server running at http://${HOST}:${PORT}/`);
 });
 
 module.exports = app;
