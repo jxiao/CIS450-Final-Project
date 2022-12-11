@@ -470,7 +470,7 @@ app.get("/directors/best", async (req, res) => {
   (SELECT DS.name, M.title, M.movie_id
   FROM OneBestMoviePerDirector O
   JOIN Directors DS ON DS.Id = O.DirectorId
-  JOIN Movies M ON M.movie_id = O.movie_id);
+  JOIN (SELECT Movie_id, Title FROM Movies) M ON M.movie_id = O.movie_id);
  * 
  */
 
