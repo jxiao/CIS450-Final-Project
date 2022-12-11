@@ -759,10 +759,10 @@ app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "./client/build/index.html"));
 });
 
-const PORT = process.env.SERVER_PORT || 8080;
-const HOST = process.env.SERVER_HOST || "127.0.0.1";
-app.listen(PORT, HOST, () => {
-  console.log(`Server running at http://${HOST}:${PORT}/`);
+const PORT = process.env.PORT || 8080;
+// const HOST = process.env.SERVER_HOST || "127.0.0.1";
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;
