@@ -81,6 +81,8 @@ function Search() {
         onRow={(record) => {
           return {
             onClick: () => {
+              console.log(record);
+              console.log(record.Type === "book");
               setDetailedViewItem(record);
             }, // click row
           };
@@ -97,7 +99,9 @@ function Search() {
       >
         <DetailedView
           id={detailedViewItem && detailedViewItem.Id}
-          isBook={detailedViewItem && detailedViewItem.Type === "Book"}
+          isBook={
+            detailedViewItem && detailedViewItem.Type.toLowerCase() === "book"
+          }
         />
       </Modal>
     </div>
