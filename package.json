@@ -1,5 +1,7 @@
 {
   "scripts": {
-    "install-all": "cd client && npm install --force && cd ../server && npm install"
+    "install-all": "cd client && npm install --force && cd ../server && npm install",
+    "build": "npm run install-all && cd client && npm run build",
+    "start": "cd server && npm start"
   }
 }
