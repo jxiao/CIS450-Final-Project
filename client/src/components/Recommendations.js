@@ -59,17 +59,13 @@ function Recommendations() {
   const [detailedViewItem, setDetailedViewItem] = useState(null);
   const [movieChecked, setMovieChecked] = useState(false);
   const onFinish = (values) => {
-    console.log("Received values of form: ", values);
     let genresReformatted = `('${values.genres.join("','")}')`;
-    console.log("reformat" + genresReformatted);
     const fetchAllResults = async () => {
       const results = await getAllRecommendations({
         genres: genresReformatted,
         minRating: values.rating,
         minNumRaters: values.minRaters,
       });
-      console.log("ran both query");
-      console.log(results.data.results);
       const newArr = results.data.results.map((item, i) => ({
         ...item,
         key: i,
@@ -81,8 +77,6 @@ function Recommendations() {
         genres: genresReformatted,
         minRating: values.rating,
       });
-      console.log("ran book query");
-      console.log(results.data.results);
       const newArr = results.data.results.map((item, i) => ({
         ...item,
         key: i,
@@ -95,8 +89,6 @@ function Recommendations() {
         minRating: values.rating,
         minNumRaters: values.minRaters,
       });
-      console.log("ran movie query");
-      console.log(results.data.results);
       const newArr = results.data.results.map((item, i) => ({
         ...item,
         key: i,
@@ -113,7 +105,6 @@ function Recommendations() {
   };
 
   const handleChangeMedia = (e) => {
-    console.log(!movieChecked);
     setMovieChecked(!movieChecked);
   };
 

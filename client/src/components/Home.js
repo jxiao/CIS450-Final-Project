@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { List, Card, Modal } from "antd";
 import Carousel from "react-multi-carousel";
-import { bestDirector, getBooks, getMovies } from "../modules/api";
+import {
+  bestDirector,
+  getAuthorsBest,
+  getBooks,
+  getMovies,
+} from "../modules/api";
 import { Navbar, DetailedView } from "./index.js";
 import { translate as translateData } from "../modules/utility.js";
 
@@ -65,6 +70,7 @@ function Home() {
   const [bestData, setBestData] = useState([]);
   const [carouselData, setCarouselData] = useState([]);
   const [detailedViewItem, setDetailedViewItem] = useState(null);
+  const [authorsBestData, setAuthorsBestData] = useState([]);
   useEffect(() => {
     function interleaveArrays(arr1, arr2) {
       const result = [];
@@ -80,6 +86,10 @@ function Home() {
         numMovies: 1,
       });
       setBestData(data.directors);
+    }
+    async function fetchBestAuthor() {
+      const { data } = await getAuthorsBest();
+      setAuthorsBestData(data.results);
     }
     async function fetchBooksAndMovies() {
       const NUM_ITEMS = 10;
@@ -105,6 +115,9 @@ function Home() {
     }
     fetchBestDirector();
     fetchBooksAndMovies();
+    setTimeout(() => {
+      fetchBestAuthor();
+    }, 500);
   }, []);
 
   return (

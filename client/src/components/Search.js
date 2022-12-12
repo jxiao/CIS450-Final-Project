@@ -16,16 +16,13 @@ function Search() {
       const results = await getSearch({
         search: searchText,
       });
-      console.log("ran search");
       const newArr = results.data.results.map((item, i) => ({
         ...item,
         key: i,
       }));
       setData(newArr);
-      console.log(newArr);
     };
     if (searchText !== "") {
-      console.log("running");
       fetchResults();
     }
   }, [searchText]);
@@ -81,8 +78,6 @@ function Search() {
         onRow={(record) => {
           return {
             onClick: () => {
-              console.log(record);
-              console.log(record.Type === "book");
               setDetailedViewItem(record);
             }, // click row
           };
