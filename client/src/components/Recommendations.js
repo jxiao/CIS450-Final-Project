@@ -135,7 +135,7 @@ function Recommendations() {
   };
 
   const handleChangeMedia = (e) => {
-    console.log(!movieChecked)
+    console.log(!movieChecked);
     setMovieChecked(!movieChecked);
   };
 
@@ -159,7 +159,7 @@ function Recommendations() {
             "input-number": 2,
             "checkbox-group": ["Books", "Movies"],
             rating: 0,
-            minRaters: "0",
+            minRaters: 0,
             }}
         >
             <Form.Item
@@ -219,7 +219,6 @@ function Recommendations() {
                 <Option value="comedey">Comedy</Option>
             </Select>
             </Form.Item>
-
             <Form.Item
             name="rating"
             
@@ -252,9 +251,9 @@ function Recommendations() {
             ]}
             >
             <Radio.Group>
-                <Radio.Button value="0">0</Radio.Button>
-                <Radio.Button value="1">1</Radio.Button>
-                <Radio.Button value="2">2</Radio.Button>
+                <Radio.Button value={0}>0</Radio.Button>
+                <Radio.Button value={1}>1</Radio.Button>
+                <Radio.Button value={2}>2</Radio.Button>
             </Radio.Group>
             </Form.Item>
             }
@@ -301,7 +300,9 @@ function Recommendations() {
       >
         <DetailedView
           id={detailedViewItem && detailedViewItem.Id}
-          isBook={detailedViewItem && detailedViewItem.Type === "book"}
+          isBook={
+            detailedViewItem && detailedViewItem.Type.toLowerCase() === "book"
+          }
         />
       </Modal>
     </div>

@@ -21,6 +21,7 @@ function Navbar() {
   const location = useLocation();
   return (
     <Container style={{ borderBottom: "0.5px solid grey" }}>
+      <img src={"/images/engine.webp"}></img>
       <RouterLink
         to="/"
         style={{ display: "flex", flex: 1 }}

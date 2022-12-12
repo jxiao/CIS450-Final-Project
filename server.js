@@ -1,22 +1,30 @@
 const express = require("express");
 const mysql = require("mysql");
 var cors = require("cors");
+const dotenv = require("dotenv");
 
-const config = require("./configuration.json");
+dotenv.config();
 
 const app = express();
+const path = require("path");
+app.use(express.static(path.join(__dirname, "./client/build")));
 
 const connection = mysql.createConnection({
-  host: config.rds_host,
-  user: config.rds_user,
-  password: config.rds_password,
-  port: config.rds_port,
-  database: config.rds_db,
+  host: process.env.RDS_HOST,
+  user: process.env.RDS_USER,
+  password: process.env.RDS_PASSWORD,
+  port: process.env.RDS_PORT,
+  database: process.env.RDS_DB,
 });
 connection.connect();
 
-// whitelist localhost 3000
-app.use(cors({ credentials: true, origin: ["http://localhost:3000"] }));
+app.use(cors({ credentials: true, origin: ["http://localhost:3000", "*"] }));
+app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
 /**
  * BOOK ROUTES
@@ -121,7 +129,7 @@ app.get("/book/:id/similar", async (req, res) => {
           WITH GenreSatisfyingBooks AS (
             SELECT BookISBN, COUNT(*) AS numSimilar
             FROM GenreOfBook
-            WHERE GenreName IN ${genres}
+            WHERE GenreName IN ${genres === "()" ? "('')" : genres}
             GROUP BY BookISBN
             ORDER BY numSimilar DESC
           ),
@@ -160,7 +168,6 @@ app.get("/book/:id/similar", async (req, res) => {
 
 app.get("/authors", async (req, res) => {
   const { name, gender } = req.query;
-  // TODO: is gender a string or an int here?  Do we need to parse it?
   const query = `
     SELECT *
     FROM Authors
@@ -245,15 +252,15 @@ app.get("/movies", async (req, res) => {
 app.get("/movie/:id", async (req, res) => {
   const { id } = req.params;
   const query = `
-    SELECT Movies.Movie_id as movieId, Movies.Title, Movies.Overview, AVG(Rating) as Rating, GROUP_CONCAT(DISTINCT GenreName) as genre, GROUP_CONCAT(DISTINCT Directors.Name) as directors, GROUP_CONCAT(DISTINCT Actors.Name) as actors
-    FROM Movies
-    JOIN Directs ON Movies.Movie_id = Directs.Movie_id
-    JOIN Directors ON Directors.Id = Directs.DirectorId
-    JOIN Plays ON Movies.Movie_id = Plays.Movie_id
-    JOIN Actors ON Actors.Id = Plays.ActorId
-    JOIN GenreOfMovie ON Movies.Movie_id = GenreOfMovie.Movie_id
-    JOIN Ratings ON Ratings.MovieId = Movies.Movie_id
-    WHERE Movies.Movie_id = ${id};
+  SELECT Movies.Movie_id as movieId, Movies.Title, Movies.Overview, AVG(Rating) as Rating, GROUP_CONCAT(DISTINCT GenreName) as genre, GROUP_CONCAT(DISTINCT Directors.Name) as directors, GROUP_CONCAT(DISTINCT Actors.Name) as actors
+  FROM Movies
+  LEFT JOIN Directs ON Movies.Movie_id = Directs.Movie_id
+  LEFT JOIN Directors ON Directors.Id = Directs.DirectorId
+  LEFT JOIN Plays ON Movies.Movie_id = Plays.Movie_id
+  LEFT JOIN Actors ON Actors.Id = Plays.ActorId
+  LEFT JOIN GenreOfMovie ON Movies.Movie_id = GenreOfMovie.Movie_id
+  LEFT JOIN Ratings ON Ratings.MovieId = Movies.Movie_id
+  WHERE Movies.Movie_id = ${id};
   `;
   connection.query(query, (error, results) => {
     if (error) {
@@ -279,9 +286,9 @@ app.get("/movie/:id/similar", async (req, res) => {
     if (error) {
       res.status(400).json({ error: error });
     } else {
-      const directors = `(${results
-        .map((result) => `'${result.DirectorId}'`)
-        .join(",")})`;
+      const directors = results
+        ? `(${results.map((result) => `'${result.DirectorId}'`).join(",")})`
+        : "";
       const actorsQuery = `
         SELECT ActorId
         FROM Plays
@@ -291,22 +298,22 @@ app.get("/movie/:id/similar", async (req, res) => {
         if (error) {
           res.status(400).json({ error: error });
         } else {
-          const actors = `(${results
-            .map((result) => `'${result.ActorId}'`)
-            .join(",")})`;
+          const actors = results
+            ? `(${results.map((result) => `'${result.ActorId}'`).join(",")})`
+            : "";
           const query = `
             WITH Director_movies AS (
               SELECT Movie_id, COUNT(*) AS numSimilar
               FROM Directs
               WHERE DirectorId IN ${directors}
-              GROUP BY DirectorId
+              GROUP BY Movie_id
               ORDER BY numSimilar DESC
             ),
             Actor_movies AS (
               SELECT Movie_id, COUNT(*) AS numSimilar
               FROM Plays
-              WHERE ActorId IN ${actors}
-              GROUP BY ActorId
+              WHERE ActorId IN ${actors === "()" ? "('')" : actors}
+              GROUP BY Movie_id
               ORDER BY numSimilar DESC
             ),
             Unioned AS (
@@ -318,7 +325,7 @@ app.get("/movie/:id/similar", async (req, res) => {
             FROM Unioned U
             JOIN Movies ON Movies.Movie_id = U.Movie_id
             GROUP BY U.Movie_id, Movies.Title, Type
-            HAVING Movies.Movie_id != ${id}
+            HAVING U.Movie_id != ${id}
             ORDER BY numSimilar DESC
             LIMIT ${numResults || 10};
           `;
@@ -419,62 +426,61 @@ app.get("/directors", async (req, res) => {
 
 app.get("/directors/best", async (req, res) => {
   const { numRaters, numMovies } = req.query;
-  console.log("here in directors best");
-  const query = `
-    WITH MovieRatings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
-      FROM Ratings
-      GROUP BY MovieId
-      HAVING NumRaters >= ${numRaters}
-    ),
-    DirectorStats AS (
-      SELECT D.DirectorId, AVG(AverageRating) AS DirectorAvgRating
-      FROM Directs D
-      JOIN MovieRatings M ON D.Movie_id = M.MovieId
-      GROUP BY DirectorId
-      HAVING COUNT(*) >= ${numMovies}
-    ),
-    HighestDirectors AS (
-      SELECT DirectorId
-      FROM DirectorStats
-      WHERE DirectorAvgRating >= ALL (SELECT DirectorAvgRating FROM DirectorStats)
-    ),
-    DirectorBestRating AS (
-      SELECT H.DirectorId AS DirectorId, MAX(AverageRating) as max_rating
-      FROM HighestDirectors H
-      JOIN Directs D ON H.DirectorId = D.DirectorId
-      JOIN MovieRatings M ON D.movie_id = M.MovieId
-      GROUP BY DirectorId
-    ),
-    BestMovies AS (
-      SELECT D.DirectorId, Movie_id
-      FROM DirectorBestRating
-      JOIN Directs D ON DirectorBestRating.DirectorId = D.DirectorId
-      JOIN MovieRatings M ON D.movie_id = M.MovieId
-      WHERE M.AverageRating = DirectorBestRating.max_rating
-    ),
-      OneBestMoviePerDirector AS (
-      SELECT DirectorId, Movie_id
-      FROM (SELECT * FROM BestMovies B ORDER BY RAND()) A
-      GROUP BY DirectorId
-    )
-    SELECT DS.name, M.title
-    FROM OneBestMoviePerDirector O
-    JOIN Directors DS ON DS.Id = O.DirectorId
-    JOIN Movies M ON M.movie_id = O.movie_id;
-  `;
+  const query = "SELECT * FROM directors_best_materialized_view;";
   connection.query(query, (error, results) => {
-    console.log("sedning query");
     if (error) {
-      console.log("here in error");
       res.status(400).json({ error: error });
     } else if (results) {
-      console.log("here in results");
-      console.log(results);
       res.status(200).json({ directors: results });
     }
   });
 });
+
+/**
+ * CREATING MATERIALIZED VIEW FOR /directors/best
+ * 
+  CREATE TABLE directors_best_materialized_view AS
+  WITH MovieRatings AS (
+    SELECT MovieId, AVG(rating) as AverageRating
+    FROM Ratings
+    GROUP BY MovieId
+  ),
+  DirectorStats AS (
+    SELECT D.DirectorId, AVG(AverageRating) AS DirectorAvgRating
+    FROM Directs D
+    JOIN MovieRatings M ON D.Movie_id = M.MovieId
+    GROUP BY DirectorId
+  ),
+  HighestDirectors AS (
+    SELECT DirectorId
+    FROM DirectorStats
+    WHERE DirectorAvgRating >= ALL (SELECT DirectorAvgRating FROM DirectorStats)
+  ),
+  DirectorBestRating AS (
+    SELECT H.DirectorId AS DirectorId, MAX(AverageRating) as max_rating
+    FROM HighestDirectors H
+    JOIN Directs D ON H.DirectorId = D.DirectorId
+    JOIN MovieRatings M ON D.movie_id = M.MovieId
+    GROUP BY DirectorId
+  ),
+  BestMovies AS (
+    SELECT D.DirectorId, Movie_id
+    FROM DirectorBestRating
+    JOIN Directs D ON DirectorBestRating.DirectorId = D.DirectorId
+    JOIN MovieRatings M ON D.movie_id = M.MovieId
+    WHERE M.AverageRating = DirectorBestRating.max_rating
+  ),
+    OneBestMoviePerDirector AS (
+    SELECT DirectorId, Movie_id
+    FROM (SELECT * FROM BestMovies B ORDER BY RAND()) A
+    GROUP BY DirectorId
+  )
+  (SELECT DS.name, M.title, M.movie_id
+  FROM OneBestMoviePerDirector O
+  JOIN Directors DS ON DS.Id = O.DirectorId
+  JOIN (SELECT Movie_id, Title FROM Movies) M ON M.movie_id = O.movie_id);
+ * 
+ */
 
 app.get("/director/:id", async (req, res) => {
   const { id } = req.params;
@@ -554,69 +560,61 @@ app.get("/search", async (req, res) => {
       WHERE Title LIKE '%${search}%'
     ),
     Movie_ratings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
+      SELECT MovieId, AVG(rating) as AverageRating
       FROM Ratings
       GROUP BY MovieId
     ),
     Matched_movies AS (
       SELECT Title, Movie_id AS ID, 'Movie' AS Type, AverageRating
-      FROM Movies
-      JOIN Movie_ratings R ON R.MovieId = Movies.Movie_id
+      FROM (SELECT Title, Movie_id FROM Movies) M
+      JOIN Movie_ratings R ON R.MovieId = M.Movie_id
       WHERE Title LIKE '%${search}%'
     ),
     Matched_authors AS (
       SELECT BookISBN AS ISBN, B.Title AS Title, 'Book' AS Type, B.rating
       FROM Writes W
-      JOIN Books B ON W.BookISBN = B.ISBN
-      WHERE AuthorName LIKE '%${search}%'
+      JOIN (SELECT ISBN, Title, rating FROM Books) B ON W.BookISBN = B.ISBN
+      WHERE W.AuthorName LIKE '%${search}%'
     ),
     Matched_directors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
-      FROM Directs
-      JOIN Directors ON Directs.DirectorId = Directors.Id
-      JOIN Movies ON Directs.Movie_id = Movies.Movie_id
-      JOIN Movie_ratings R ON R.MovieId = Directs.Movie_id
-      WHERE Name LIKE '%${search}%'
+      SELECT M.Title, M.Movie_id AS ID, 'Movie' AS Type, R.AverageRating
+      FROM Directs D
+      JOIN (SELECT Id, Name FROM Directors) S ON D.DirectorId = S.Id
+      JOIN (SELECT Title, Movie_id FROM Movies) M ON D.Movie_id = M.Movie_id
+      JOIN Movie_ratings R ON R.MovieId = D.Movie_id
+      WHERE S.Name LIKE '%${search}%'
     ),
     Matched_actors AS (
-      SELECT Movies.Title, Movies.Movie_id AS ID, 'Movie' AS Type, AverageRating
-      FROM Plays
-      JOIN Actors on Plays.ActorId = Actors.Id
-      JOIN Movies ON Plays.Movie_id = Movies.Movie_id
-      JOIN Movie_ratings R ON R.MovieId = Plays.Movie_id
-      WHERE Name LIKE '%${search}%'
-    ),
-    Book_genres AS (
-      SELECT BookISBN, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
-      FROM GenreOfBook
-      GROUP BY BookISBN
-    ),
-    Movie_genres AS (
-      SELECT Movie_id, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
-      FROM GenreOfMovie
-      GROUP BY Movie_id
+      SELECT M.Title, M.Movie_id AS ID, 'Movie' AS Type, AverageRating
+      FROM (SELECT ActorId, Movie_id FROM Plays) P
+      JOIN (SELECT Id, Name FROM Actors) A on P.ActorId = A.Id
+      JOIN (SELECT Movie_id, Title FROM Movies) M ON P.Movie_id = M.Movie_id
+      JOIN Movie_ratings R ON R.MovieId = P.Movie_id
+      WHERE A.Name LIKE '%${search}%'
     ),
     BooksUnioned AS (
-       (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_books B)
-       UNION
-       (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_authors B)
+      (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_books B)
+      UNION
+      (SELECT B.ISBN as Id, B.Title, B.Type, B.Rating FROM Matched_authors B)
     ),
     Final_books AS (
-       SELECT *
-       FROM BooksUnioned B
-       JOIN Book_genres G ON G.BookISBN = B.Id
+      SELECT B.Id as Id, B.Title, B.Type, B.Rating, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') AS GenreList
+      FROM BooksUnioned B
+      JOIN GenreOfBook G ON G.BookISBN = B.Id
+      GROUP BY B.Id, B.Title, B.Type, B.Rating
     ),
     UnionedMovies AS (
-       (SELECT * FROM Matched_movies)
-       UNION
-       (SELECT * FROM Matched_directors)
-       UNION
-       (SELECT * FROM Matched_actors)
+        (SELECT * FROM Matched_movies)
+        UNION
+        (SELECT * FROM Matched_directors)
+        UNION
+        (SELECT * FROM Matched_actors)
     ),
     Final_movies AS (
-      SELECT M.ID as Id, M.Title, M.Type, M.AverageRating AS Rating, G.GenreList
+      SELECT M.ID as Id, M.Title, M.Type, M.AverageRating AS Rating, GROUP_CONCAT(GenreName ORDER BY GenreName SEPARATOR ', ') as GenreList
       FROM UnionedMovies M
-      JOIN Movie_genres G ON M.ID = G.Movie_id
+      JOIN GenreOfMovie G ON M.ID = G.Movie_id
+      GROUP BY M.ID, M.Title, M.Type, M.AverageRating
     )
     (SELECT Id, Title, Type, Rating, GenreList
     FROM Final_books)
@@ -634,7 +632,8 @@ app.get("/search", async (req, res) => {
 });
 
 app.get("/bookrecommendation", async (req, res) => {
-  const { genres, minRating } = req.query;
+  const { genres, minRating: minRatingString } = req.query;
+  const minRating = parseInt(minRatingString);
   const query = `
     WITH books_genres AS (
       SELECT BookISBN, COUNT(*) AS GenresMatched
@@ -650,7 +649,6 @@ app.get("/bookrecommendation", async (req, res) => {
       LIMIT 10
   `;
   connection.query(query, (error, results) => {
-    console.log(error, results);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
@@ -660,32 +658,34 @@ app.get("/bookrecommendation", async (req, res) => {
 });
 
 app.get("/movierecommendation", async (req, res) => {
-  const { genres, minRating, minNumRaters } = req.query;
-  console.log("movie rec", req.query);
+  const {
+    genres,
+    minRating: minRatingString,
+    minNumRaters: minNumRatersString,
+  } = req.query;
+  const { minRating, minNumRaters } = {
+    minRating: parseInt(minRatingString),
+    minNumRaters: parseInt(minNumRatersString),
+  };
   const query = `
-    WITH movies_genres AS (
+    SELECT Title, A.Movie_id AS Id, 'movie' as Type
+    FROM Movies A
+    ${minNumRaters === 0 ? "LEFT" : ""} JOIN (SELECT MovieId
+        FROM Ratings
+        GROUP BY MovieId
+        HAVING AVG(rating) >= ${minRating} ${
+    minNumRaters > 1 ? `AND COUNT(DISTINCT UserId) >= ${minNumRaters}` : ""
+  }) R ON A.Movie_id = R.MovieId
+    JOIN (
       SELECT Movie_id, COUNT(*) AS GenresMatched
       FROM GenreOfMovie
       WHERE GenreName IN ${genres}
       GROUP BY Movie_id
       ORDER BY GenresMatched DESC
-    ),
-    Movie_ratings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
-      FROM Ratings
-      GROUP BY MovieId
-      HAVING AverageRating >= ${minRating} AND NumRaters >= ${minNumRaters}
-    ),
-    Five_movies AS (
-      SELECT Title, A.Movie_id AS Id, 'movie' as Type
-      FROM Movies A
-      JOIN (SELECT MovieId FROM Movie_ratings) R ON A.Movie_id = R.MovieId
-      JOIN movies_genres G ON A.Movie_id = G.Movie_id
-      LIMIT 5
-    )
-    (SELECT Title, Id, Type
-    FROM Five_movies)
+      ) G ON A.Movie_id = G.Movie_id
+    LIMIT 10
   `;
+  console.log(typeof minNumRaters, typeof minRating);
   connection.query(query, (error, results) => {
     if (error) {
       res.status(400).json({ error: error });
@@ -696,52 +696,57 @@ app.get("/movierecommendation", async (req, res) => {
 });
 
 app.get("/allrecommendations", async (req, res) => {
-  const { genres, minRating, minNumRaters } = req.query;
-  // console.log(genres);
-  console.log("all recs", req.query);
+  const {
+    genres,
+    minRating: minRatingString,
+    minNumRaters: minNumRatersString,
+  } = req.query;
+  const { minRating, minNumRaters } = {
+    minRating: parseInt(minRatingString),
+    minNumRaters: parseInt(minNumRatersString),
+  };
   const query = `
-    WITH books_genres AS (
-      SELECT BookISBN, COUNT(*) AS GenresMatched
-      FROM GenreOfBook
-      WHERE GenreName IN ${genres}
-      GROUP BY BookISBN
-      ORDER BY GenresMatched DESC
-    ),
-    movies_genres AS (
-      SELECT Movie_id, COUNT(*) AS GenresMatched
-      FROM GenreOfMovie
-      WHERE GenreName IN ${genres}
-      GROUP BY Movie_id
-      ORDER BY GenresMatched DESC
-    ),
-    Movie_ratings AS (
-      SELECT MovieId, AVG(rating) as AverageRating, COUNT(DISTINCT UserId) as NumRaters
-      FROM Ratings
-      GROUP BY MovieId
-      HAVING AverageRating >= ${minRating} AND NumRaters >= ${minNumRaters}
-    ),
-    Five_books AS (
+    WITH Five_books AS (
       SELECT Title, ISBN AS Id, 'book' as Type
       FROM Books A
-      JOIN (SELECT BookISBN FROM books_genres) B ON A.ISBN = B.BookISBN
+      JOIN (SELECT BookISBN
+            FROM (SELECT BookISBN, COUNT(*) AS GenresMatched
+            FROM GenreOfBook
+            WHERE GenreName IN ${genres}
+            GROUP BY BookISBN
+            ORDER BY GenresMatched DESC) C) B ON A.ISBN = B.BookISBN
       WHERE Rating >= ${minRating}
       LIMIT 5
     ),
     Five_movies AS (
       SELECT Title, A.Movie_id AS Id, 'movie' as Type
       FROM Movies A
-      JOIN (SELECT MovieId FROM Movie_ratings) R ON A.Movie_id = R.MovieId
-      JOIN movies_genres G ON A.Movie_id = G.Movie_id
+      ${minNumRaters === 0 ? "LEFT" : ""} JOIN (SELECT MovieId
+            FROM (
+                SELECT MovieId
+                FROM Ratings
+                GROUP BY MovieId
+                HAVING AVG(rating) >= ${minRating} ${
+    minNumRaters > 1 ? `AND COUNT(DISTINCT UserId) >= ${minNumRaters}` : ""
+  }
+                ) B
+            ) R ON A.Movie_id = R.MovieId
+      JOIN (SELECT Movie_id, COUNT(*) AS GenresMatched
+            FROM GenreOfMovie
+            WHERE GenreName IN ${genres}
+            GROUP BY Movie_id
+            ORDER BY GenresMatched DESC
+          ) G ON A.Movie_id = G.Movie_id
       LIMIT 5
     )
     (SELECT Title, Id, Type
     FROM Five_books)
     UNION
     (SELECT Title, Id, Type
-    FROM Five_movies)
+    FROM Five_movies);
   `;
+  console.log(minNumRaters, typeof minNumRaters, query);
   connection.query(query, (error, results) => {
-    console.log(error);
     if (error) {
       res.status(400).json({ error: error });
     } else if (results) {
@@ -750,10 +755,14 @@ app.get("/allrecommendations", async (req, res) => {
   });
 });
 
-app.listen(config.server_port, () => {
-  console.log(
-    `Server running at http://${config.server_host}:${config.server_port}/`
-  );
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "./client/build/index.html"));
+});
+
+const PORT = process.env.PORT || 8080;
+// const HOST = process.env.SERVER_HOST || "127.0.0.1";
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;
