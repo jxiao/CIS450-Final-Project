@@ -157,9 +157,9 @@ function DetailedView({ id, isBook }) {
             </>
           ) : (
             <>
-              <b>Actors:</b> {data.actors}
+              <b>Actors:</b> {data.actors || "N/A"}
               <br />
-              <b>Directors:</b> {data.directors}
+              <b>Directors:</b> {data.directors || "N/A"}
             </>
           )}
         </Column>

@@ -10,7 +10,7 @@ const Container = styled.div`
 
 const RouterLink = styled(Link)`
   text-decoration: none;
-  color: ${(props) => (props.current ? "#374c79" : "#000000")};
+  color: ${(props) => (props.current === "true" ? "#374c79" : "#000000")};
   align-self: center;
   padding: 1rem;
   font-weight: 500;
@@ -25,17 +25,17 @@ function Navbar() {
       <RouterLink
         to="/"
         style={{ display: "flex", flex: 1 }}
-        current={location.pathname === "/"}
+        current={`${location.pathname === "/"}`}
       >
         Entertainment Engine
       </RouterLink>
       <Container>
-        <RouterLink to="/search" current={location.pathname === "/search"}>
+        <RouterLink to="/search" current={`${location.pathname === "/search"}`}>
           Search
         </RouterLink>
         <RouterLink
           to="/recommendation"
-          current={location.pathname === "/recommendation"}
+          current={`${location.pathname === "/recommendation"}`}
         >
           Recommendations
         </RouterLink>
