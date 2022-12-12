@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Input, Table, Modal } from "antd";
+import { Input, Table, Modal, Typography, Spin } from "antd";
 import { Navbar, DetailedView } from "./index.js";
 import { getSearch } from "../modules/api";
 
@@ -7,20 +7,31 @@ function Search() {
   const [searchText, setSearchText] = useState("");
   const [data, setData] = useState(null);
   const [detailedViewItem, setDetailedViewItem] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const handleSearch = (e) => {
-    setSearchText(e.target.value);
+    setSearchText(e);
+    setLoading(true);
   };
 
   useEffect(() => {
     const fetchResults = async () => {
-      const results = await getSearch({
-        search: searchText,
-      });
-      const newArr = results.data.results.map((item, i) => ({
-        ...item,
-        key: i,
-      }));
-      setData(newArr);
+      try {
+        const { status, data } = await getSearch({
+          search: searchText,
+        });
+        if (status === 200) {
+          const newArr = data.results.map((item, i) => ({
+            ...item,
+            key: i,
+          }));
+          setData(newArr);
+          console.log("newnArr" + newArr);
+          setLoading(false);
+        }
+      } catch (error) {
+        setLoading(false);
+      }
     };
     if (searchText !== "") {
       fetchResults();
@@ -33,12 +44,13 @@ function Search() {
       dataIndex: "Title",
       key: "Title",
       width: "30%",
+      render: (text) => <a>{text}</a>,
     },
     {
       title: "Type",
       dataIndex: "Type",
       key: "Type",
-      width: "20%",
+      width: "10%",
       filters: [
         {
           text: "Book",
@@ -56,7 +68,7 @@ function Search() {
       title: "Rating",
       dataIndex: "rating",
       key: "rating",
-      width: "20%",
+      width: "10%",
       sorter: (a, b) => a.rating - b.rating,
       sortDirections: ["descend", "ascend"],
     },
@@ -68,23 +80,48 @@ function Search() {
   ];
 
   return (
-    <div>
+    <div style={{ justifyContent: "center" }}>
       <Navbar />
-      <Input
-        placeholder="Type in a title, author, director, or actor, and press enter to search"
-        onPressEnter={handleSearch}
-      />
-      <Table
-        onRow={(record) => {
-          return {
-            onClick: () => {
-              setDetailedViewItem(record);
-            }, // click row
-          };
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          marginLeft: "auto",
+          marginRight: "auto",
+          width: 600,
         }}
-        columns={columns}
-        dataSource={data}
-      />
+      >
+        <Typography.Title style={{ marginLeft: 50 }}>
+          Search for Books and Movies!
+        </Typography.Title>
+        <Input.Search
+          size="large"
+          placeholder="Type in a title, author, director, or actor, and press the button to search"
+          onSearch={handleSearch}
+          enterButton
+        />
+      </div>
+      {loading && (
+        <Spin style={{ marginTop: 50 }} tip="Loading" size="large">
+          <div className="content" />
+        </Spin>
+      )}
+      <div style={{ marginTop: 50, marginLeft: 50, marginRight: 50 }}>
+        {data && !loading && (
+          <Table
+            onRow={(record) => {
+              return {
+                onClick: () => {
+                  setDetailedViewItem(record);
+                }, // click row
+              };
+            }}
+            columns={columns}
+            dataSource={data}
+          />
+        )}
+      </div>
       <Modal
         open={detailedViewItem !== null && detailedViewItem !== undefined}
         onOk={() => setDetailedViewItem(null)}
