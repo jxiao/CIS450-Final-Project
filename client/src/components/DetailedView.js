@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Card } from "antd";
+import { Card, Spin } from "antd";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import {
@@ -84,9 +84,11 @@ const [isModalVisible, setIsModalVisible] = useState(false);
 */
 
 function DetailedView({ id, isBook }) {
+  console.log("id", id, "isBook", isBook);
   const [data, setData] = useState(null);
   const [similarData, setSimilarData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [similarLoading, setSimilarLoading] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -103,6 +105,7 @@ function DetailedView({ id, isBook }) {
     };
     const fetchSimilarData = async () => {
       try {
+        setSimilarLoading(true);
         const { status, data } = await (isBook
           ? getSimilarByBookId(id)
           : getSimilarByMovieId(id));
@@ -112,7 +115,9 @@ function DetailedView({ id, isBook }) {
             res.map((item) => translate(item, item.Type === "Book"))
           );
         }
+        setSimilarLoading(false);
       } catch (error) {
+        setSimilarLoading(false);
         console.log(error);
       }
     };
@@ -165,40 +170,46 @@ function DetailedView({ id, isBook }) {
         </Column>
       </Container>
       <h3>Similar Books and Movies</h3>
-      {similarData && similarData.length > 0 ? (
-        <Carousel
-          swipeable={false}
-          draggable={false}
-          showDots={true}
-          infinite={true}
-          autoPlay={true}
-          autoPlaySpeed={3000}
-          responsive={responsive}
-        >
-          {similarData.map((item) => (
-            <div key={item.id}>
-              <Card
-                hoverable
-                style={{ width: 240 }}
-                cover={
-                  <img
-                    alt={item.Title}
-                    src={
-                      item.type === "Book"
-                        ? item.ImageURL
-                        : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
-                    }
-                  />
-                }
-              >
-                <Meta title={item.Title} description={item.type} />
-              </Card>
-            </div>
-          ))}
-        </Carousel>
-      ) : (
-        <div>No similar books or movies found.</div>
+      {similarLoading && (
+        <Spin tip="Loading" size="large">
+          <div className="content" />
+        </Spin>
       )}
+      {!similarLoading &&
+        (similarData && similarData.length > 0 ? (
+          <Carousel
+            swipeable={false}
+            draggable={false}
+            showDots={true}
+            infinite={true}
+            autoPlay={true}
+            autoPlaySpeed={3000}
+            responsive={responsive}
+          >
+            {similarData.map((item) => (
+              <div key={item.id}>
+                <Card
+                  hoverable
+                  style={{ width: 240 }}
+                  cover={
+                    <img
+                      alt={item.Title}
+                      src={
+                        item.type === "Book"
+                          ? item.ImageURL
+                          : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
+                      }
+                    />
+                  }
+                >
+                  <Meta title={item.Title} description={item.type} />
+                </Card>
+              </div>
+            ))}
+          </Carousel>
+        ) : (
+          <div>No similar books or movies found.</div>
+        ))}
     </div>
   );
 }

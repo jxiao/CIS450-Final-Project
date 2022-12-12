@@ -138,11 +138,9 @@ export const getBookRecommendations = async (fields) => {
 
 export const getAuthorsBest = async () => {
   try {
-    console.log("getAuthorsBest", `${rootURL}/authors/best`);
     const resp = await axios.get(`${rootURL}/authors/best`);
     return { status: resp.status, data: resp.data };
   } catch (error) {
-    console.log(error);
     return { status: error.response.status, data: [] };
   }
 };

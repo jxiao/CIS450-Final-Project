@@ -38,7 +38,7 @@ const getBestAuthors = async (db) => {
         { $group: { _id: "$author", avgRating: { $avg: "$rating" } } },
         { $match: { avgRating: maxAvgRating } },
         { $project: { _id: 0, author: "$_id", avgRating: 1 } },
-        { $limit: 10 },
+        { $sample: { size: 10 } },
       ])
       .toArray();
     authors.forEach(async (author) => {
