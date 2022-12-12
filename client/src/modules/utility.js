@@ -1,7 +1,7 @@
 export const translate = (item, isBook) => {
   const obj = {
     type: item.Type || (isBook ? "Book" : "Movie"),
-    id: isBook ? item.ISBN : item.movieId,
+    id: isBook ? item.ISBN : (item.movieId || item.Movie_id),
     Title: item.Title,
     Rating: item.Rating,
     genre: item.genre,

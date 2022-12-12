@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { List, Card, Modal } from "antd";
+import { List, Card, Modal, Typography } from "antd";
 import Carousel from "react-multi-carousel";
 import { bestDirector, getBooks, getMovies } from "../modules/api";
 import { Navbar, DetailedView } from "./index.js";
@@ -110,39 +110,44 @@ function Home() {
   return (
     <div>
       <Navbar />
-      <h1 style={{ textAlign: "center" }}>Entertainment Engine</h1>
-      <Carousel
-        swipeable={false}
-        draggable={false}
-        showDots={true}
-        infinite={true}
-        autoPlay={true}
-        autoPlaySpeed={3000}
-        responsive={responsive}
-      >
-        {carouselData.map((item) => (
-          <div key={item.id}>
-            <Card
-              hoverable
-              style={{ width: 240, height: 350 }}
-              cover={
-                <img
-                  alt={item.Title}
-                  style={{ height: 250 }}
-                  src={
-                    item.type === "Book"
-                      ? item.ImageURL
-                      : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
-                  }
-                />
-              }
-            >
-              <Meta title={item.Title} description={item.type} />
-            </Card>
+      <Typography.Title style={{ textAlign: "center" }}>Discover new books and movies today!</Typography.Title>
+      <div style = {{marginLeft: 20, marginTop: 50}}> 
+        <Carousel
+          swipeable={false}
+          draggable={false}
+          showDots={true}
+          infinite={true}
+          autoPlay={true}
+          autoPlaySpeed={3000}
+          responsive={responsive}
+        >
+          {carouselData.map((item) => (
+            <div key={item.id}>
+              <Card
+                hoverable
+                onClick={() => {
+                  setDetailedViewItem(item)
+                }}
+                style={{ width: 240, height: 350 }}
+                cover={
+                  <img
+                    alt={item.Title}
+                    style={{ height: 250 }}
+                    src={
+                      item.type === "Book"
+                        ? item.ImageURL
+                        : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
+                    }
+                  />
+                }
+              >
+                <Meta title={item.Title} description={item.type} />
+              </Card>
           </div>
         ))}
       </Carousel>
-      <h3>Best Directors</h3>
+      </div>
+      <Typography.Title level={2} style={{ marginTop: 50, textAlign: "center" }}>Featured Directors</Typography.Title>
       <List
         itemLayout="horizontal"
         dataSource={bestData}
@@ -155,7 +160,7 @@ function Home() {
             <List.Item.Meta
               style={styles.listItem}
               // avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
-              title={item.title}
+              title={<Typography.Link style={{ color: "rgb(5, 99, 193)"}}> { item.title }</Typography.Link>}
               description={<div>{item.name}</div>}
             />
           </List.Item>
@@ -169,8 +174,10 @@ function Home() {
         width={1000}
       >
         <DetailedView
-          id={detailedViewItem && detailedViewItem.movie_id}
-          isBook={false}
+          id={detailedViewItem && (detailedViewItem.movie_id || detailedViewItem.id)}
+          isBook={
+            detailedViewItem && detailedViewItem.type && detailedViewItem.type.toLowerCase() === "book"
+          }
         />
       </Modal>
     </div>
