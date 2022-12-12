@@ -123,8 +123,10 @@ app.get("/book/:id/similar", async (req, res) => {
           res.status(400).json({ error: error });
         } else {
           const authors = `(${results
-            .map((result) => `'${result.Name}'`)
+            .map((result) => `'${result.AuthorName}'`)
             .join(",")})`;
+          console.log(results);
+          console.log(authors);
           const query = `
           WITH GenreSatisfyingBooks AS (
             SELECT BookISBN, COUNT(*) AS numSimilar
@@ -329,6 +331,7 @@ app.get("/movie/:id/similar", async (req, res) => {
             ORDER BY numSimilar DESC
             LIMIT ${numResults || 10};
           `;
+          console.log(query);
           connection.query(query, (error, results) => {
             if (error) {
               res.status(400).json({ error: error });
@@ -425,7 +428,6 @@ app.get("/directors", async (req, res) => {
 });
 
 app.get("/directors/best", async (req, res) => {
-  const { numRaters, numMovies } = req.query;
   const query = "SELECT * FROM directors_best_materialized_view;";
   connection.query(query, (error, results) => {
     if (error) {
