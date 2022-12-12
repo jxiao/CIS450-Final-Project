@@ -21,8 +21,6 @@ function Search() {
           search: searchText,
         });
         if (status === 200) {
-          console.log("ran search");
-          console.log(data);
           const newArr = data.results.map((item, i) => ({
             ...item,
             key: i,
@@ -30,13 +28,12 @@ function Search() {
           setData(newArr);
           console.log("newnArr" + newArr);
           setLoading(false);
-        } 
+        }
       } catch (error) {
         setLoading(false);
       }
     };
     if (searchText !== "") {
-      console.log("running");
       fetchResults();
     }
   }, [searchText]);
@@ -83,34 +80,47 @@ function Search() {
   ];
 
   return (
-    <div style={{justifyContent: "center"}}>
+    <div style={{ justifyContent: "center" }}>
       <Navbar />
-      <div style={{ display:"flex", flexDirection:"column", justifyContent: "space-between", marginLeft:"auto", marginRight: "auto", width: 600}}>
-        <Typography.Title style={{ marginLeft:50}}>Search for Books and Movies!</Typography.Title>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          marginLeft: "auto",
+          marginRight: "auto",
+          width: 600,
+        }}
+      >
+        <Typography.Title style={{ marginLeft: 50 }}>
+          Search for Books and Movies!
+        </Typography.Title>
         <Input.Search
-        size = "large"
-        placeholder="Type in a title, author, director, or actor, and press the button to search"
-        onSearch={handleSearch}
-        enterButton
+          size="large"
+          placeholder="Type in a title, author, director, or actor, and press the button to search"
+          onSearch={handleSearch}
+          enterButton
         />
       </div>
-      {loading && <Spin style={{marginTop: 50}} tip="Loading" size="large">
-        <div className="content" />
-      </Spin>}
-      <div style={{ marginTop: 50, marginLeft: 50, marginRight: 50}}>
-      {data && !loading && <Table
-        onRow={(record) => {
-          return {
-            onClick: () => {
-              console.log(record);
-              console.log(record.Type === "book");
-              setDetailedViewItem(record);
-            }, // click row
-          };
-        }}
-        columns={columns}
-        dataSource={data}
-      />}
+      {loading && (
+        <Spin style={{ marginTop: 50 }} tip="Loading" size="large">
+          <div className="content" />
+        </Spin>
+      )}
+      <div style={{ marginTop: 50, marginLeft: 50, marginRight: 50 }}>
+        {data && !loading && (
+          <Table
+            onRow={(record) => {
+              return {
+                onClick: () => {
+                  setDetailedViewItem(record);
+                }, // click row
+              };
+            }}
+            columns={columns}
+            dataSource={data}
+          />
+        )}
       </div>
       <Modal
         open={detailedViewItem !== null && detailedViewItem !== undefined}
@@ -126,7 +136,7 @@ function Search() {
           }
         />
       </Modal>
-      </div>
+    </div>
   );
 }
 

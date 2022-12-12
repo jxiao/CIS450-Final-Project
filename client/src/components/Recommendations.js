@@ -10,7 +10,7 @@ import {
   Table,
   Modal,
   Typography,
-  Spin
+  Spin,
 } from "antd";
 import {
   getAllRecommendations,
@@ -56,25 +56,21 @@ function Recommendations() {
   const [loading, setLoading] = useState(false);
 
   const onFinish = (values) => {
-    console.log("Received values of form: ", values);
     let genresReformatted = `('${values.genres.join("','")}')`;
-    console.log("reformat" + genresReformatted);
     setLoading(true);
     const fetchAllResults = async () => {
       try {
         const { status, data } = await getAllRecommendations({
-            genres: genresReformatted,
-            minRating: values.rating,
-            minNumRaters: values.minRaters,
+          genres: genresReformatted,
+          minRating: values.rating,
+          minNumRaters: values.minRaters,
         });
         if (status === 200) {
-            console.log("ran both query");
-            console.log(data.results);
-            const newArr = data.results.map((item, i) => ({
-                ...item,
-                key: i,
-            }));
-            setData(newArr);
+          const newArr = data.results.map((item, i) => ({
+            ...item,
+            key: i,
+          }));
+          setData(newArr);
         }
         setLoading(false);
       } catch (error) {
@@ -85,17 +81,15 @@ function Recommendations() {
     const fetchBooks = async () => {
       try {
         const { status, data } = await getBookRecommendations({
-            genres: genresReformatted,
-            minRating: values.rating,
+          genres: genresReformatted,
+          minRating: values.rating,
         });
         if (status === 200) {
-            console.log("ran book query");
-            console.log(data.results);
-            const newArr = data.results.map((item, i) => ({
-                ...item,
-                key: i,
-            }));
-            setData(newArr);
+          const newArr = data.results.map((item, i) => ({
+            ...item,
+            key: i,
+          }));
+          setData(newArr);
         }
         setLoading(false);
       } catch (error) {
@@ -106,18 +100,18 @@ function Recommendations() {
     const fetchMovies = async () => {
       try {
         const { status, data } = await getMovieRecommendations({
-            genres: genresReformatted,
-            minRating: values.rating,
-            minNumRaters: values.minRaters,
+          genres: genresReformatted,
+          minRating: values.rating,
+          minNumRaters: values.minRaters,
         });
         if (status === 200) {
-            console.log("ran movie query");
-            console.log(data.results);
-            const newArr = data.results.map((item, i) => ({
-                ...item,
-                key: i,
-            }));
-            setData(newArr);
+          console.log("ran movie query");
+          console.log(data.results);
+          const newArr = data.results.map((item, i) => ({
+            ...item,
+            key: i,
+          }));
+          setData(newArr);
         }
         setLoading(false);
       } catch (error) {
@@ -135,161 +129,213 @@ function Recommendations() {
   };
 
   const handleChangeMedia = (e) => {
-    console.log(!movieChecked);
     setMovieChecked(!movieChecked);
   };
 
   const resetForm = (e) => {
-      setData(null);
-      setLoading(false);
-      setMovieChecked(false);
-  }
+    setData(null);
+    setLoading(false);
+    setMovieChecked(false);
+  };
 
   return (
-    <div style={{justifyContent: "center"}}>
+    <div style={{ justifyContent: "center" }}>
       <Navbar />
-      <div style={{ display:"flex", flexDirection:"column", justifyContent: "space-between", marginLeft:"auto", marginRight: "auto", width: 1000}}>
-        {data === null && 
-        <Typography.Title style={{textAlign:"center", marginBottom: "50px", marginTop: "50px"}} level={2}>Fill out this form to see books and movies recommended for you!</Typography.Title>}
-        {data === null && <Form
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          marginLeft: "auto",
+          marginRight: "auto",
+          width: 1000,
+        }}
+      >
+        {data === null && (
+          <Typography.Title
+            style={{
+              textAlign: "center",
+              marginBottom: "50px",
+              marginTop: "50px",
+            }}
+            level={2}
+          >
+            Fill out this form to see books and movies recommended for you!
+          </Typography.Title>
+        )}
+        {data === null && (
+          <Form
             name="validate_other"
             layout="vertical"
             onFinish={onFinish}
             initialValues={{
-            "input-number": 2,
-            "checkbox-group": ["Books", "Movies"],
-            rating: 0,
-            minRaters: 0,
+              "input-number": 2,
+              "checkbox-group": ["Books", "Movies"],
+              rating: 0,
+              minRaters: 0,
             }}
-        >
+          >
             <Form.Item
-            name="media"
-            label={<p style={{fontSize:"16px", margin:"auto"}}>What kind of media do you like?</p>}
-            rules={[
+              name="media"
+              label={
+                <p style={{ fontSize: "16px", margin: "auto" }}>
+                  What kind of media do you like?
+                </p>
+              }
+              rules={[
                 {
-                required: true,
+                  required: true,
                 },
-            ]}
+              ]}
             >
-            <Checkbox.Group>
+              <Checkbox.Group>
                 <Col span={14}>
-                <Checkbox
+                  <Checkbox
                     value="Books"
                     style={{
-                    lineHeight: "32px",
+                      lineHeight: "32px",
                     }}
-                >
+                  >
                     Books
-                </Checkbox>
+                  </Checkbox>
                 </Col>
                 <Col span={14}>
-                <Checkbox
+                  <Checkbox
                     onChange={handleChangeMedia}
                     value="Movies"
                     style={{
-                    lineHeight: "32px",
+                      lineHeight: "32px",
                     }}
-                >
+                  >
                     Movies
-                </Checkbox>
+                  </Checkbox>
                 </Col>
-            </Checkbox.Group>
+              </Checkbox.Group>
             </Form.Item>
 
             <Form.Item
-            name="genres"
-            label={<p style={{fontSize:"16px", margin:"auto"}}>What are your favorite genres?</p>}
-            rules={[
+              name="genres"
+              label={
+                <p style={{ fontSize: "16px", margin: "auto" }}>
+                  What are your favorite genres?
+                </p>
+              }
+              rules={[
                 {
-                required: true,
-                message: "Please select your preferred genres",
-                type: "array",
+                  required: true,
+                  message: "Please select your preferred genres",
+                  type: "array",
                 },
-            ]}
+              ]}
             >
-            <Select
+              <Select
                 mode="multiple"
                 placeholder="Please select your preferred genres"
-            >
+              >
                 <Option value="history">History</Option>
                 <Option value="adventure">Adventure</Option>
                 <Option value="romance">Romance</Option>
                 <Option value="horror">Horror</Option>
                 <Option value="fiction">Fiction</Option>
                 <Option value="comedey">Comedy</Option>
-            </Select>
+              </Select>
             </Form.Item>
             <Form.Item
-            name="rating"
-            
-            label={<p style={{fontSize:"16px", margin:"auto"}}>Preferred Minimum Average Rating</p>}
-            rules={[
-              {
-                required: true,
-              },
-            ]}
+              name="rating"
+              label={
+                <p style={{ fontSize: "16px", margin: "auto" }}>
+                  Preferred Minimum Average Rating
+                </p>
+              }
+              rules={[
+                {
+                  required: true,
+                },
+              ]}
             >
-            <Slider
+              <Slider
                 min={0}
                 max={10}
                 step={0.01}
                 marks={{
-                0: "0",
-                10: "10",
+                  0: "0",
+                  10: "10",
                 }}
-            />
+              />
             </Form.Item>
 
-            {movieChecked && <Form.Item
-            name="minRaters"
-            label={<p style={{fontSize:"16px", margin:"auto"}}>What is the minimum no. of raters you prefer for a movie?</p>}
-            rules={[
-                {
-                required: true,
-                message: "Please pick an item",
-                },
-            ]}
-            >
-            <Radio.Group>
-                <Radio.Button value={0}>0</Radio.Button>
-                <Radio.Button value={1}>1</Radio.Button>
-                <Radio.Button value={2}>2</Radio.Button>
-            </Radio.Group>
-            </Form.Item>
-            }
+            {movieChecked && (
+              <Form.Item
+                name="minRaters"
+                label={
+                  <p style={{ fontSize: "16px", margin: "auto" }}>
+                    What is the minimum no. of raters you prefer for a movie?
+                  </p>
+                }
+                rules={[
+                  {
+                    required: true,
+                    message: "Please pick an item",
+                  },
+                ]}
+              >
+                <Radio.Group>
+                  <Radio.Button value={0}>0</Radio.Button>
+                  <Radio.Button value={1}>1</Radio.Button>
+                  <Radio.Button value={2}>2</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            )}
             <Form.Item
-            wrapperCol={{
+              wrapperCol={{
                 span: 12,
                 offset: 10,
-                
-            }}
+              }}
             >
-            <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit">
                 Generate recommendations
-            </Button>
+              </Button>
             </Form.Item>
-        </Form>}
+          </Form>
+        )}
       </div>
-      {loading && <Spin style={{marginTop: 50}} tip="Loading" size="large">
-        <div className="content" />
-      </Spin>}
-      <div style={{ marginTop: 50, marginLeft: 200, marginRight: 200, justifyContent: "center"}}>
-      {data && <h2>Recommendation Results</h2>}
-      {data &&
-      <Table
-        onRow={(record) => {
-          return {
-            onClick: () => {
-              setDetailedViewItem(record);
-            }, // click row
-          };
+      {loading && (
+        <Spin style={{ marginTop: 50 }} tip="Loading" size="large">
+          <div className="content" />
+        </Spin>
+      )}
+      <div
+        style={{
+          marginTop: 50,
+          marginLeft: 200,
+          marginRight: 200,
+          justifyContent: "center",
         }}
-        columns={columns}
-        dataSource={data}
-      />}
-      {data && <Button type="primary" htmlType="submit" onClick={resetForm} style={{marginLeft:"500px"}}>
-                Try again
-            </Button>}
+      >
+        {data && <h2>Recommendation Results</h2>}
+        {data && (
+          <Table
+            onRow={(record) => {
+              return {
+                onClick: () => {
+                  setDetailedViewItem(record);
+                }, // click row
+              };
+            }}
+            columns={columns}
+            dataSource={data}
+          />
+        )}
+        {data && (
+          <Button
+            type="primary"
+            htmlType="submit"
+            onClick={resetForm}
+            style={{ marginLeft: "500px" }}
+          >
+            Try again
+          </Button>
+        )}
       </div>
       <Modal
         open={detailedViewItem !== null && detailedViewItem !== undefined}

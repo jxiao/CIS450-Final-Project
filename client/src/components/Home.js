@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { List, Card, Modal } from "antd";
+import { List, Card, Modal, Typography, Spin } from "antd";
 import Carousel from "react-multi-carousel";
-import { bestDirector, getBooks, getMovies } from "../modules/api";
+import {
+  bestDirector,
+  getAuthorsBest,
+  getBooks,
+  getMovies,
+} from "../modules/api";
 import { Navbar, DetailedView } from "./index.js";
 import { translate as translateData } from "../modules/utility.js";
 
@@ -65,6 +70,8 @@ function Home() {
   const [bestData, setBestData] = useState([]);
   const [carouselData, setCarouselData] = useState([]);
   const [detailedViewItem, setDetailedViewItem] = useState(null);
+  const [authorsBestData, setAuthorsBestData] = useState([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     function interleaveArrays(arr1, arr2) {
       const result = [];
@@ -80,6 +87,12 @@ function Home() {
         numMovies: 1,
       });
       setBestData(data.directors);
+    }
+    async function fetchBestAuthor() {
+      setLoading(true);
+      const { data } = await getAuthorsBest();
+      setAuthorsBestData(data.results);
+      setLoading(false);
     }
     async function fetchBooksAndMovies() {
       const NUM_ITEMS = 10;
@@ -105,62 +118,117 @@ function Home() {
     }
     fetchBestDirector();
     fetchBooksAndMovies();
+    setTimeout(() => {
+      fetchBestAuthor();
+    }, 500);
   }, []);
 
   return (
     <div>
       <Navbar />
-      <h1 style={{ textAlign: "center" }}>Entertainment Engine</h1>
-      <Carousel
-        swipeable={false}
-        draggable={false}
-        showDots={true}
-        infinite={true}
-        autoPlay={true}
-        autoPlaySpeed={3000}
-        responsive={responsive}
-      >
-        {carouselData.map((item) => (
-          <div key={item.id}>
-            <Card
-              hoverable
-              style={{ width: 240, height: 350 }}
-              cover={
-                <img
-                  alt={item.Title}
-                  style={{ height: 250 }}
-                  src={
-                    item.type === "Book"
-                      ? item.ImageURL
-                      : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
-                  }
-                />
-              }
-            >
-              <Meta title={item.Title} description={item.type} />
-            </Card>
-          </div>
-        ))}
-      </Carousel>
-      <h3>Best Directors</h3>
-      <List
-        itemLayout="horizontal"
-        dataSource={bestData}
-        renderItem={(item) => (
-          <List.Item
-            onClick={() => {
-              setDetailedViewItem(item);
-            }}
+      <Typography.Title style={{ textAlign: "center" }}>
+        Discover new books and movies today!
+      </Typography.Title>
+      <div style={{ marginLeft: 20, marginTop: 50 }}>
+        <Carousel
+          swipeable={false}
+          draggable={false}
+          showDots={true}
+          infinite={true}
+          autoPlay={true}
+          autoPlaySpeed={3000}
+          responsive={responsive}
+        >
+          {carouselData.map((item) => (
+            <div key={item.id}>
+              <Card
+                hoverable
+                onClick={() => {
+                  setDetailedViewItem(item);
+                }}
+                style={{ width: 240, height: 350 }}
+                cover={
+                  <img
+                    alt={item.Title}
+                    style={{ height: 250 }}
+                    src={
+                      item.type === "Book"
+                        ? item.ImageURL
+                        : "https://www.clipartmax.com/png/middle/1-15852_exp-movie-icon.png"
+                    }
+                  />
+                }
+              >
+                <Meta title={item.Title} description={item.type} />
+              </Card>
+            </div>
+          ))}
+        </Carousel>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "row" }}>
+        <div style={{ flex: 1, padding: "0.5rem" }}>
+          <Typography.Title
+            level={2}
+            style={{ marginTop: 50, textAlign: "center" }}
           >
-            <List.Item.Meta
-              style={styles.listItem}
-              // avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
-              title={item.title}
-              description={<div>{item.name}</div>}
+            Featured Directors
+          </Typography.Title>
+          <List
+            itemLayout="horizontal"
+            dataSource={bestData}
+            renderItem={(item) => (
+              <List.Item
+                onClick={() => {
+                  setDetailedViewItem(item);
+                }}
+              >
+                <List.Item.Meta
+                  style={styles.listItem}
+                  // avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
+                  title={
+                    <Typography.Link style={{ color: "rgb(5, 99, 193)" }}>
+                      {" "}
+                      {item.title}
+                    </Typography.Link>
+                  }
+                  description={<div>{item.name}</div>}
+                />
+              </List.Item>
+            )}
+          />
+        </div>
+        <div style={{ flex: 1, padding: "0.5rem" }}>
+          <Typography.Title
+            level={2}
+            style={{ marginTop: 50, textAlign: "center" }}
+          >
+            Featured Authors
+          </Typography.Title>
+          {loading && (
+            <Spin style={{ marginTop: 50 }} tip="Loading" size="large">
+              <div className="content" />
+            </Spin>
+          )}
+          {!loading && (
+            <List
+              style={{ flex: 1, padding: "0.5rem" }}
+              itemLayout="horizontal"
+              dataSource={authorsBestData}
+              renderItem={(item) => (
+                <List.Item>
+                  <List.Item.Meta
+                    style={styles.listItem}
+                    // avatar={<Avatar src="https://joeschmoe.io/api/v1/random" />}
+                    title={item.title}
+                    description={<div>{item.author}</div>}
+                  />
+                </List.Item>
+              )}
             />
-          </List.Item>
-        )}
-      />
+          )}
+        </div>
+      </div>
       <Modal
         open={detailedViewItem !== null && detailedViewItem !== undefined}
         onOk={() => setDetailedViewItem(null)}
@@ -169,8 +237,15 @@ function Home() {
         width={1000}
       >
         <DetailedView
-          id={detailedViewItem && detailedViewItem.movie_id}
-          isBook={false}
+          id={
+            detailedViewItem &&
+            (detailedViewItem.movie_id || detailedViewItem.id)
+          }
+          isBook={
+            detailedViewItem &&
+            detailedViewItem.type &&
+            detailedViewItem.type.toLowerCase() === "book"
+          }
         />
       </Modal>
     </div>

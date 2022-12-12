@@ -2,6 +2,9 @@ const express = require("express");
 const mysql = require("mysql");
 var cors = require("cors");
 const dotenv = require("dotenv");
+const { url: DB_URL } = require("./utility");
+const lib = require("./mongodb");
+let db;
 
 dotenv.config();
 
@@ -123,7 +126,7 @@ app.get("/book/:id/similar", async (req, res) => {
           res.status(400).json({ error: error });
         } else {
           const authors = `(${results
-            .map((result) => `'${result.Name}'`)
+            .map((result) => `'${result.AuthorName}'`)
             .join(",")})`;
           const query = `
           WITH GenreSatisfyingBooks AS (
@@ -180,6 +183,11 @@ app.get("/authors", async (req, res) => {
       res.status(200).json({ authors: results });
     }
   });
+});
+
+app.get("/authors/best", async (req, res) => {
+  const results = await lib.getBestAuthors(db);
+  res.status(200).json({ results });
 });
 
 app.get("/authors/:id", async (req, res) => {
@@ -425,7 +433,6 @@ app.get("/directors", async (req, res) => {
 });
 
 app.get("/directors/best", async (req, res) => {
-  const { numRaters, numMovies } = req.query;
   const query = "SELECT * FROM directors_best_materialized_view;";
   connection.query(query, (error, results) => {
     if (error) {
@@ -685,7 +692,6 @@ app.get("/movierecommendation", async (req, res) => {
       ) G ON A.Movie_id = G.Movie_id
     LIMIT 10
   `;
-  console.log(typeof minNumRaters, typeof minRating);
   connection.query(query, (error, results) => {
     if (error) {
       res.status(400).json({ error: error });
@@ -745,7 +751,6 @@ app.get("/allrecommendations", async (req, res) => {
     (SELECT Title, Id, Type
     FROM Five_movies);
   `;
-  console.log(minNumRaters, typeof minNumRaters, query);
   connection.query(query, (error, results) => {
     if (error) {
       res.status(400).json({ error: error });
@@ -761,7 +766,8 @@ app.get("*", (_req, res) => {
 
 const PORT = process.env.PORT || 8080;
 // const HOST = process.env.SERVER_HOST || "127.0.0.1";
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  db = await lib.connect(DB_URL);
   console.log(`Server running on port ${PORT}`);
 });
 

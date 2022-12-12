@@ -135,3 +135,12 @@ export const getBookRecommendations = async (fields) => {
     return { status: error.response.status, data: error.response.data };
   }
 };
+
+export const getAuthorsBest = async () => {
+  try {
+    const resp = await axios.get(`${rootURL}/authors/best`);
+    return { status: resp.status, data: resp.data };
+  } catch (error) {
+    return { status: error.response.status, data: [] };
+  }
+};
