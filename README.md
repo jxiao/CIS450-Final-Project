@@ -4,7 +4,9 @@ Eduardo Gonzalez, Leah Levin, Sherie Pan, Jeffrey Xiao
 
 Deployed at: https://entertainment-engine.herokuapp.com/
 
-To run locally, run the following commands:
+- Note that long queries which take > 30 seconds to return will timeout on Heroku's free tier. To avoid this, please run the local version.
+
+To run locally, run the following commands (this will start the backend server and the frontend client):
 
 ```bash
 npm run install-all; # this will install the packages for both the backend (root) and the frontend (client)
