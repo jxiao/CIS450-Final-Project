@@ -16,3 +16,5 @@ npm start; # this will start the backend server
 cd client; # go to the frontend directory
 npm start; # start the frontend server
 ```
+
+**IMPORTANT**: you must have the correct details in the `.env` file in the root directory as well as the `client/.env` file. If you do not have the `.env` files, contact any of us for the details.
