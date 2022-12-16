@@ -73,10 +73,10 @@ function Search() {
     },
     {
       title: "Rating",
-      dataIndex: "rating",
-      key: "rating",
+      dataIndex: "Rating",
+      key: "Rating",
       width: "10%",
-      sorter: (a, b) => a.rating - b.rating,
+      sorter: (a, b) => a.Rating - b.Rating,
       sortDirections: ["descend", "ascend"],
     },
     {
