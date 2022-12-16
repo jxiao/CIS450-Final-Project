@@ -1,3 +1,9 @@
+/**
+ * @file Home.js
+ * @description This file contains the Home component.
+ * This component is used to display the home page of the application.
+ * It displays the best directors, best authors, and books and movies in a carousel.
+ */
 import React, { useState, useEffect } from "react";
 import { List, Card, Modal, Typography, Spin } from "antd";
 import Carousel from "react-multi-carousel";
@@ -73,6 +79,13 @@ function Home() {
   const [authorsBestData, setAuthorsBestData] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
+    /**
+     * Interleaves arrays (intended for use of arrays of equal length)
+     * One array is for books, one array is for movies
+     * @param {array} arr1
+     * @param {array arr2
+     * @returns
+     */
     function interleaveArrays(arr1, arr2) {
       const result = [];
       for (let i = 0; i < arr1.length; i++) {
@@ -81,6 +94,7 @@ function Home() {
       }
       return result;
     }
+
     async function fetchBestDirector() {
       const { data } = await bestDirector({
         numRaters: 1,

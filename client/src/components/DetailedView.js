@@ -1,3 +1,9 @@
+/**
+ * @file DetailedView.js
+ * @description This file contains the DetailedView component.
+ * This component is used to display the detailed view of a book or movie.
+ * It also displays similar books and movies.
+ */
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Card, Spin } from "antd";
@@ -63,33 +69,15 @@ const translate = (item, isBook) => {
   return obj;
 };
 
-/*
-import React from "react";
-import { Modal } from "antd";
-import DetailedView from "./DetailedView";
-
-const [isModalVisible, setIsModalVisible] = useState(false);
-
-<h2 onClick={() => setIsModalVisible(true)}>Detailed View?</h2>
-<Modal
-  open={isModalVisible}
-  onOk={() => setIsModalVisible(false)}
-  onCancel={() => setIsModalVisible(false)}
-  footer={null}
-  width={1000}
->
-  <DetailedView id="002914180X" isBook={true} />
-  <DetailedView id="862" isBook={false} />
-</Modal>
-*/
-
 function DetailedView({ id, isBook }) {
-  console.log("id", id, "isBook", isBook);
   const [data, setData] = useState(null);
   const [similarData, setSimilarData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [similarLoading, setSimilarLoading] = useState(false);
   useEffect(() => {
+    /**
+     * Fetches detailed information for a specific book or movie
+     */
     const fetchData = async () => {
       try {
         const { status, data } = await (isBook
@@ -103,6 +91,9 @@ function DetailedView({ id, isBook }) {
         setIsLoading(false);
       }
     };
+    /**
+     * Fetches similar books and movies
+     */
     const fetchSimilarData = async () => {
       try {
         setSimilarLoading(true);

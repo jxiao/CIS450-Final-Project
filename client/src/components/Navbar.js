@@ -1,3 +1,10 @@
+/**
+ * @file Navbar.js
+ * @description This file contains the Navbar component.
+ * This component is used to display the navbar at the top of the application.
+ * It contains links to the home page, search page, and recommendations page.
+ * It also contains a logo.
+ */
 import React from "react";
 import styled from "styled-components";
 import { Link, useLocation } from "react-router-dom";
@@ -21,7 +28,7 @@ function Navbar() {
   const location = useLocation();
   return (
     <Container style={{ borderBottom: "0.5px solid grey" }}>
-      <img src={"/images/engine.webp"}></img>
+      <img src={"/images/engine.webp"} alt={"Engine"}></img>
       <RouterLink
         to="/"
         style={{ display: "flex", flex: 1 }}

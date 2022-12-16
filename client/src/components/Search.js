@@ -1,3 +1,11 @@
+/**
+ * @file Search.js
+ * @description This file contains the Search component.
+ * This component is used to display the search page.
+ * It displays a search bar to search for books and movies.
+ * It also displays a table to display the search results.
+ * It also displays a modal to display the detailed view of a book or movie.
+ */
 import React, { useState, useEffect } from "react";
 import { Input, Table, Modal, Typography, Spin } from "antd";
 import { Navbar, DetailedView } from "./index.js";
@@ -26,7 +34,6 @@ function Search() {
             key: i,
           }));
           setData(newArr);
-          console.log("newnArr" + newArr);
           setLoading(false);
         }
       } catch (error) {

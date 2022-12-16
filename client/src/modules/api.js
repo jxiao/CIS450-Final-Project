@@ -1,3 +1,6 @@
+/**
+ * This file contains all the API calls to the backend.
+ */
 import axios from "axios";
 
 const rootURL =

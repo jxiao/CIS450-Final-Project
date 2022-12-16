@@ -1,4 +1,7 @@
-/* eslint-disable object-curly-newline */
+/**
+ * @fileoverview MongoDB connection and queries
+ * MongoDB database operations
+ */
 // Import MongoDB driver
 const { MongoClient } = require("mongodb");
 const dotenv = require("dotenv");

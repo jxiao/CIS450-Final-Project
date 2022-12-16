@@ -1,3 +1,7 @@
+/**
+ * This is the main file for the server. It contains the express server and all the routes.
+ * It also contains the database connection.
+ */
 const express = require("express");
 const mysql = require("mysql");
 var cors = require("cors");

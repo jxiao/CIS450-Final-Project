@@ -1,3 +1,10 @@
+/**
+ * @file Recommendations.js
+ * @description This file contains the Recommendations component.
+ * This component is used to display the recommendations page.
+ * It displays a form to select the type of recommendation, and a table to display the recommendations.
+ * It also displays a modal to display the detailed view of a book or movie.
+ */
 import React, { useState } from "react";
 import {
   Button,
@@ -105,8 +112,6 @@ function Recommendations() {
           minNumRaters: values.minRaters,
         });
         if (status === 200) {
-          console.log("ran movie query");
-          console.log(data.results);
           const newArr = data.results.map((item, i) => ({
             ...item,
             key: i,
